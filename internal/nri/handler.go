@@ -39,7 +39,22 @@ func newNRIPlugin(logger *slog.Logger, resolver *resolver.Resolver, opts ...stub
 }
 
 func (p *plugin) Run(ctx context.Context) error {
-	return p.stub.Run(ctx)
+	done := make(chan struct{})
+	go func() {
+		select {
+		case <-ctx.Done():
+			p.stub.Stop()
+		case <-done:
+		}
+	}()
+
+	err := p.stub.Run(ctx)
+	close(done) // prevent goroutine leak if Run() returns naturally
+
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
+	return err
 }
 
 func NewNRIHandler(socketPath, pluginIndex string, logger *slog.Logger, r *resolver.Resolver) (*Handler, error) {
@@ -114,6 +129,10 @@ func (h *Handler) startNRIPlugin(ctx context.Context) error {
 }
 
 func (h *Handler) Start(ctx context.Context) error {
+	defer func() {
+		h.logger.InfoContext(ctx, "NRI handler has stopped")
+	}()
+
 	// isRetryable is called only in case of err != nil
 	isRetryable := func(err error) bool {
 		// We stop in case of:

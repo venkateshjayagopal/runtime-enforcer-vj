@@ -117,6 +117,9 @@ func New(logger *slog.Logger, conf *Config, resolver *resolver.Resolver) (*Serve
 }
 
 func (s *Server) Start(ctx context.Context) error {
+	defer func() {
+		s.logger.InfoContext(ctx, "grpcexporter has stopped")
+	}()
 	lc := net.ListenConfig{}
 	addr := fmt.Sprintf(":%d", s.conf.Port)
 	listener, err := lc.Listen(ctx, "tcp", addr)
