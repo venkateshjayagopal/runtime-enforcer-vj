@@ -9,16 +9,6 @@ const (
 	notFound = "not-found"
 )
 
-type podInfo struct {
-	// this should become a separate type if needed
-	podID        string
-	namespace    string
-	name         string
-	workloadName string
-	workloadType string
-	labels       Labels
-}
-
 type KubeInfo struct {
 	PodID         string
 	PodName       string

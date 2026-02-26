@@ -2,6 +2,22 @@ package resolver
 
 import "github.com/rancher-sandbox/runtime-enforcer/api/v1alpha1"
 
+// containerInfo is the internal representation of a container's information.
+type containerInfo struct {
+	cgID CgroupID
+	name ContainerName
+}
+
+// podInfo is the internal representation of a pod's information.
+type podInfo struct {
+	podID        string
+	namespace    string
+	name         string
+	workloadName string
+	workloadType string
+	labels       Labels
+}
+
 type podState struct {
 	info       *podInfo
 	containers map[ContainerID]*containerInfo
