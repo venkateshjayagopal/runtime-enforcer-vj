@@ -228,12 +228,12 @@ func (m *Manager) handleErrOnShutdown(err error) error {
 
 func (m *Manager) Start(ctx context.Context) error {
 	defer func() {
-		m.logger.InfoContext(ctx, "BPF Manager stopped")
 		m.isShuttingDown.Store(true)
 
 		if err := m.objs.Close(); err != nil {
 			m.logger.ErrorContext(ctx, "failed to close BPF objects", "error", err)
 		}
+		m.logger.InfoContext(ctx, "BPF Manager stopped")
 	}()
 
 	m.logger.InfoContext(ctx, "Starting BPF Manager...")

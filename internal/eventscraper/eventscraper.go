@@ -106,6 +106,10 @@ func (es *EventScraper) getKubeProcessInfo(event *bpf.ProcessEvent) *KubeProcess
 
 // Start begins the event scraping process.
 func (es *EventScraper) Start(ctx context.Context) error {
+	defer func() {
+		es.logger.InfoContext(ctx, "event scraper has stopped")
+	}()
+
 	for {
 		select {
 		case <-ctx.Done():
