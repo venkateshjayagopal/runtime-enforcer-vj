@@ -130,21 +130,6 @@ agent:
   # @schema additionalProperties:true
   affinity: {}
   nriSocketPath: /var/run/nri/
-  violations:
-    otlpEndpoint: ""  # explicit override; when empty + collector.enabled → standalone collector Service
-    collector:
-      enabled: true
-      image:
-        repository: otel/opentelemetry-collector-contrib
-        tag: "0.145.0"
-        pullPolicy: IfNotPresent
-      resources:
-        limits:
-          cpu: 250m
-          memory: 128Mi
-        requests:
-          cpu: 10m
-          memory: 64Mi
 kubernetesClusterDomain: cluster.local
 
 ## Optional array of imagePullSecrets containing private registry credentials
@@ -182,6 +167,21 @@ telemetry:
   # telemetry.tracing is used to enable/disable the tracing collection and
   # exportation to the OpenTelemetry collector.
   tracing: false
+
+  violations:
+    collector:
+      enabled: true
+      image:
+        repository: otel/opentelemetry-collector-contrib
+        tag: "0.145.0"
+        pullPolicy: IfNotPresent
+      resources:
+        limits:
+          cpu: 250m
+          memory: 128Mi
+        requests:
+          cpu: 10m
+          memory: 64Mi
 
   # The following settings are mandatory to configure the OpenTelemetry
   # exporter in the controller and policy server to send metrics and traces to

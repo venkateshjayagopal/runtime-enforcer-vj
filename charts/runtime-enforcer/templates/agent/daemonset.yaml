@@ -35,7 +35,7 @@ spec:
       {{- end }}
       containers:
       - args:
-        {{- if or .Values.telemetry.tracing .Values.agent.violations.collector.enabled }}
+        {{- if or .Values.telemetry.tracing .Values.telemetry.violations.collector.enabled }}
         - --enable-tracing
         {{- end }}
         {{- if .Values.learning.enabled }}
@@ -49,9 +49,7 @@ spec:
         - --grpc-port={{ .Values.agent.grpcExporterPort }}
         - --grpc-mtls-cert-dir={{ include "runtime-enforcer.grpc.certDir" . }}
         - --log-level={{ .Values.agent.logLevel }}
-        {{- if .Values.agent.violations.otlpEndpoint }}
-        - --violation-otlp-endpoint={{ .Values.agent.violations.otlpEndpoint }}
-        {{- else if .Values.agent.violations.collector.enabled }}
+        {{- if .Values.telemetry.violations.collector.enabled }}
         - --violation-otlp-endpoint={{ include "runtime-enforcer.fullname" . }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4317
         - --violation-otlp-ca-cert=/etc/otel-collector-ca/ca.crt
         {{- end }}
@@ -63,7 +61,7 @@ spec:
           valueFrom:
             fieldRef:
               fieldPath: spec.nodeName
-        {{- if and .Values.agent.violations.collector.enabled (not .Values.agent.violations.otlpEndpoint) }}
+        {{- if .Values.telemetry.violations.collector.enabled }}
         - name: OTEL_EXPORTER_OTLP_ENDPOINT
           value: https://{{ include "runtime-enforcer.fullname" . }}-otel-collector.{{ .Release.Namespace }}.svc.cluster.local:4317
         - name: OTEL_EXPORTER_OTLP_CERTIFICATE
@@ -111,7 +109,7 @@ spec:
         - name: grpc-certs
           mountPath: {{ include "runtime-enforcer.grpc.certDir" . }}
           readOnly: true
-        {{- if and .Values.agent.violations.collector.enabled (not .Values.agent.violations.otlpEndpoint) }}
+        {{- if .Values.telemetry.violations.collector.enabled }}
         - name: otel-collector-ca
           mountPath: /etc/otel-collector-ca
           readOnly: true
@@ -144,7 +142,7 @@ spec:
             csi.cert-manager.io/issuer-name: {{ include "runtime-enforcer.caIssuerName" . }}
             csi.cert-manager.io/issuer-kind: Issuer
             csi.cert-manager.io/dns-names: ${POD_NAME}.${POD_NAMESPACE}
-      {{- if and .Values.agent.violations.collector.enabled (not .Values.agent.violations.otlpEndpoint) }}
+      {{- if .Values.telemetry.violations.collector.enabled }}
       - name: otel-collector-ca
         secret:
           secretName: runtime-enforcer-ca

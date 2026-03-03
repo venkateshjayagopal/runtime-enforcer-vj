@@ -41,7 +41,7 @@ metadata:
 spec:
   ca:
     secretName: runtime-enforcer-ca
-{{- if .Values.agent.violations.collector.enabled }}
+{{- if .Values.telemetry.violations.collector.enabled }}
 ---
 apiVersion: cert-manager.io/v1
 kind: Certificate

@@ -1,4 +1,4 @@
-{{- if .Values.agent.violations.collector.enabled }}
+{{- if .Values.telemetry.violations.collector.enabled }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
