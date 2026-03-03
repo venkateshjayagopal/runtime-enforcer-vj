@@ -217,8 +217,8 @@ func (r *WorkloadPolicyStatusSync) getViolationsByPolicy(
 		if info.issue.Code != v1alpha1.NodeIssueNone {
 			continue
 		}
-		agentClient, ok := r.conns[nodeName]
-		if !ok {
+		agentClient, nodeReady := r.conns[nodeName]
+		if !nodeReady {
 			continue
 		}
 		pbViolations, err := agentClient.scrapeViolations(ctx)
