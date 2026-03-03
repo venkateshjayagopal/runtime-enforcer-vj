@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"math"
 	"strings"
 	"time"
 
@@ -236,21 +235,12 @@ func (r *WorkloadPolicyStatusSync) getViolationsByPolicy(
 				ExecutablePath: v.GetExecutablePath(),
 				NodeName:       v.GetNodeName(),
 				Action:         v.GetAction(),
-				Count:          safeUint32ToInt32(v.GetCount()),
 			}
 			violationsByPolicy[nn] = append(violationsByPolicy[nn], rec)
 		}
 	}
 
 	return violationsByPolicy
-}
-
-// safeUint32ToInt32 converts a uint32 to int32, capping at math.MaxInt32.
-func safeUint32ToInt32(v uint32) int32 {
-	if v > math.MaxInt32 {
-		return math.MaxInt32
-	}
-	return int32(v)
 }
 
 // parsePolicyNamespacedName parses a "namespace/name" string into a NamespacedName.

@@ -172,8 +172,7 @@ func getMonitoringTest() types.Feature {
 					for _, v := range wp.Status.Violations.Violations {
 						if v.ExecutablePath == "/usr/bin/apt" &&
 							v.Action == policymode.MonitorString &&
-							v.PodName == expectedPodName &&
-							v.Count >= 1 {
+							v.PodName == expectedPodName {
 							return true
 						}
 					}
@@ -191,7 +190,6 @@ func getMonitoringTest() types.Feature {
 					if v.ExecutablePath == "/usr/bin/apt" {
 						assert.Equal(t, policymode.MonitorString, v.Action)
 						assert.Equal(t, expectedPodName, v.PodName)
-						assert.GreaterOrEqual(t, v.Count, int32(1))
 						found = true
 						break
 					}

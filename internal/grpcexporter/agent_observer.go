@@ -115,7 +115,6 @@ func (s *agentObserver) ScrapeViolations(
 			NodeName:       rec.NodeName,
 			Action:         rec.Action,
 			PolicyName:     rec.Namespace + "/" + rec.PolicyName,
-			Count:          rec.Count,
 		})
 	}
 

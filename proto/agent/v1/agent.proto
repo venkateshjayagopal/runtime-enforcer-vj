@@ -90,7 +90,6 @@ message ViolationRecord {
   string node_name = 5;
   string action = 6;
   string policy_name = 7;
-  uint32 count = 8;
 }
 
 message ScrapeViolationsResponse {

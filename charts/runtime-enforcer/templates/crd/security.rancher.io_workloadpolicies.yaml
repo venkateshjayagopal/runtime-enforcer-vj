@@ -140,11 +140,6 @@ spec:
                           description: containerName is the container where the unauthorized
                             executable ran.
                           type: string
-                        count:
-                          description: count is the number of times this violation
-                            was observed (deduplicated).
-                          format: int32
-                          type: integer
                         executablePath:
                           description: executablePath is the path of the unauthorized
                             executable.
@@ -163,7 +158,6 @@ spec:
                       required:
                       - action
                       - containerName
-                      - count
                       - executablePath
                       - nodeName
                       - podName

@@ -23,8 +23,6 @@ type ViolationRecordApplyConfiguration struct {
 	NodeName *string `json:"nodeName,omitempty"`
 	// action is the enforcement action taken (monitor or protect).
 	Action *string `json:"action,omitempty"`
-	// count is the number of times this violation was observed (deduplicated).
-	Count *int32 `json:"count,omitempty"`
 }
 
 // ViolationRecordApplyConfiguration constructs a declarative configuration of the ViolationRecord type for use with
@@ -78,13 +76,5 @@ func (b *ViolationRecordApplyConfiguration) WithNodeName(value string) *Violatio
 // If called multiple times, the Action field is set to the value of the last call.
 func (b *ViolationRecordApplyConfiguration) WithAction(value string) *ViolationRecordApplyConfiguration {
 	b.Action = &value
-	return b
-}
-
-// WithCount sets the Count field in the declarative configuration to the given value
-// and returns the receiver, so that objects can be built by chaining "With" function invocations.
-// If called multiple times, the Count field is set to the value of the last call.
-func (b *ViolationRecordApplyConfiguration) WithCount(value int32) *ViolationRecordApplyConfiguration {
-	b.Count = &value
 	return b
 }

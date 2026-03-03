@@ -25,39 +25,16 @@ func TestBufferRecordAndDrain(t *testing.T) {
 	require.Len(t, records, 1)
 	require.Equal(t, "pol1", records[0].PolicyName)
 	require.Equal(t, "ns1", records[0].Namespace)
-	require.Equal(t, uint32(1), records[0].Count)
 
 	// After drain, buffer should be empty.
 	records = buf.Drain()
 	require.Empty(t, records)
 }
 
-func TestBufferDeduplication(t *testing.T) {
+func TestBufferOverwritesOldest(t *testing.T) {
 	buf := violationbuf.NewBuffer()
 
-	info := violationbuf.ViolationInfo{
-		PolicyName:    "pol1",
-		Namespace:     "ns1",
-		PodName:       "pod1",
-		ContainerName: "ctr1",
-		ExePath:       "/bin/sh",
-		NodeName:      "node1",
-		Action:        "monitor",
-	}
-
-	buf.Record(info)
-	buf.Record(info)
-	buf.Record(info)
-
-	records := buf.Drain()
-	require.Len(t, records, 1)
-	require.Equal(t, uint32(3), records[0].Count)
-}
-
-func TestBufferCapDropsNewKeys(t *testing.T) {
-	buf := violationbuf.NewBuffer()
-
-	// Fill the buffer to its max capacity with unique keys.
+	// Fill the buffer to capacity.
 	for i := range violationbuf.MaxBufferEntries {
 		buf.Record(violationbuf.ViolationInfo{
 			PolicyName:    fmt.Sprintf("pol-%d", i),
@@ -69,9 +46,8 @@ func TestBufferCapDropsNewKeys(t *testing.T) {
 			Action:        "monitor",
 		})
 	}
-	require.Equal(t, uint64(0), buf.Dropped())
 
-	// One more unique key should be dropped.
+	// Add one more — should overwrite the oldest (pol-0).
 	buf.Record(violationbuf.ViolationInfo{
 		PolicyName:    "pol-overflow",
 		Namespace:     "ns1",
@@ -81,23 +57,14 @@ func TestBufferCapDropsNewKeys(t *testing.T) {
 		NodeName:      "node1",
 		Action:        "monitor",
 	})
-	require.Equal(t, uint64(1), buf.Dropped())
-
-	// Existing keys should still be updated (count incremented, not dropped).
-	buf.Record(violationbuf.ViolationInfo{
-		PolicyName:    "pol-0",
-		Namespace:     "ns1",
-		PodName:       "pod1",
-		ContainerName: "ctr1",
-		ExePath:       "/bin/sh",
-		NodeName:      "node1",
-		Action:        "monitor",
-	})
-	require.Equal(t, uint64(1), buf.Dropped(), "updating existing key should not increment dropped")
 
 	records := buf.Drain()
 	require.Len(t, records, violationbuf.MaxBufferEntries)
-	require.Equal(t, uint64(0), buf.Dropped(), "drain should reset dropped counter")
+
+	// Oldest should now be pol-1 (pol-0 was overwritten).
+	require.Equal(t, "pol-1", records[0].PolicyName)
+	// Newest should be pol-overflow.
+	require.Equal(t, "pol-overflow", records[len(records)-1].PolicyName)
 }
 
 func TestBufferDifferentKeys(t *testing.T) {
@@ -125,4 +92,26 @@ func TestBufferDifferentKeys(t *testing.T) {
 
 	records := buf.Drain()
 	require.Len(t, records, 2)
+}
+
+func TestBufferDrainChronologicalOrder(t *testing.T) {
+	buf := violationbuf.NewBuffer()
+
+	for i := range 5 {
+		buf.Record(violationbuf.ViolationInfo{
+			PolicyName:    fmt.Sprintf("pol-%d", i),
+			Namespace:     "ns1",
+			PodName:       "pod1",
+			ContainerName: "ctr1",
+			ExePath:       "/bin/sh",
+			NodeName:      "node1",
+			Action:        "monitor",
+		})
+	}
+
+	records := buf.Drain()
+	require.Len(t, records, 5)
+	for i, rec := range records {
+		require.Equal(t, fmt.Sprintf("pol-%d", i), rec.PolicyName)
+	}
 }

@@ -5,16 +5,6 @@ import (
 	"time"
 )
 
-// dedupKey identifies a unique violation for deduplication purposes.
-type dedupKey struct {
-	PolicyName    string
-	Namespace     string
-	PodName       string
-	ContainerName string
-	ExePath       string
-	Action        string
-}
-
 // ViolationInfo contains the details of a single policy violation event.
 type ViolationInfo struct {
 	PolicyName    string
@@ -26,7 +16,7 @@ type ViolationInfo struct {
 	Action        string
 }
 
-// ViolationRecord is a deduplicated violation record ready for scraping.
+// ViolationRecord is a violation record ready for scraping.
 type ViolationRecord struct {
 	Timestamp     time.Time
 	PolicyName    string
@@ -36,59 +26,37 @@ type ViolationRecord struct {
 	ExePath       string
 	NodeName      string
 	Action        string
-	Count         uint32
 }
 
-// MaxBufferEntries is the maximum number of unique violation keys the buffer
-// will hold between drains. Once the limit is reached, new unique violations
-// are dropped (existing keys still get their count incremented). This prevents
-// unbounded memory growth when the controller is slow to scrape.
+// MaxBufferEntries is the capacity of the ring buffer. When full, the oldest
+// entry is overwritten.
 const MaxBufferEntries = 10_000
 
-// Buffer is a thread-safe in-memory violation buffer with deduplication.
+// Buffer is a thread-safe ring buffer for violation records.
 // The EventScraper calls Record() for each violation; the gRPC server calls
 // Drain() when the controller scrapes.
 type Buffer struct {
-	mtx     sync.Mutex
-	entries map[dedupKey]*ViolationRecord
-	dropped uint64
+	mtx  sync.Mutex
+	buf  []ViolationRecord
+	head int
+	tail int
+	full bool
 }
 
 // NewBuffer creates a new violation buffer.
 func NewBuffer() *Buffer {
 	return &Buffer{
-		entries: make(map[dedupKey]*ViolationRecord),
+		buf: make([]ViolationRecord, MaxBufferEntries),
 	}
 }
 
-// Record upserts a violation into the buffer. If a record with the same
-// dedup key already exists, the count is incremented and the timestamp
-// is updated.
+// Record appends a violation to the ring buffer. If the buffer is full,
+// the oldest entry is overwritten.
 func (b *Buffer) Record(info ViolationInfo) {
-	key := dedupKey{
-		PolicyName:    info.PolicyName,
-		Namespace:     info.Namespace,
-		PodName:       info.PodName,
-		ContainerName: info.ContainerName,
-		ExePath:       info.ExePath,
-		Action:        info.Action,
-	}
-
 	b.mtx.Lock()
 	defer b.mtx.Unlock()
 
-	if rec, ok := b.entries[key]; ok {
-		rec.Count++
-		rec.Timestamp = time.Now()
-		return
-	}
-
-	if len(b.entries) >= MaxBufferEntries {
-		b.dropped++
-		return
-	}
-
-	b.entries[key] = &ViolationRecord{
+	b.buf[b.head] = ViolationRecord{
 		Timestamp:     time.Now(),
 		PolicyName:    info.PolicyName,
 		Namespace:     info.Namespace,
@@ -97,30 +65,45 @@ func (b *Buffer) Record(info ViolationInfo) {
 		ExePath:       info.ExePath,
 		NodeName:      info.NodeName,
 		Action:        info.Action,
-		Count:         1,
+	}
+
+	b.head = (b.head + 1) % MaxBufferEntries
+	if b.full {
+		b.tail = b.head
+	}
+	if b.head == b.tail {
+		b.full = true
 	}
 }
 
-// Drain atomically swaps the buffer, returning all accumulated records
-// and leaving an empty buffer. The dropped counter is also reset.
+// Drain returns all buffered records in chronological order (oldest first)
+// and resets the buffer.
 func (b *Buffer) Drain() []ViolationRecord {
 	b.mtx.Lock()
-	old := b.entries
-	b.entries = make(map[dedupKey]*ViolationRecord)
-	b.dropped = 0
-	b.mtx.Unlock()
+	defer b.mtx.Unlock()
 
-	records := make([]ViolationRecord, 0, len(old))
-	for _, rec := range old {
-		records = append(records, *rec)
+	n := b.len()
+	if n == 0 {
+		return nil
 	}
+
+	records := make([]ViolationRecord, 0, n)
+	for i := range n {
+		idx := (b.tail + i) % MaxBufferEntries
+		records = append(records, b.buf[idx])
+	}
+
+	b.head = 0
+	b.tail = 0
+	b.full = false
+
 	return records
 }
 
-// Dropped returns the number of unique violations dropped since the last drain
-// because the buffer was at capacity.
-func (b *Buffer) Dropped() uint64 {
-	b.mtx.Lock()
-	defer b.mtx.Unlock()
-	return b.dropped
+// len returns the number of entries in the ring buffer (caller must hold mtx).
+func (b *Buffer) len() int {
+	if b.full {
+		return MaxBufferEntries
+	}
+	return (b.head - b.tail + MaxBufferEntries) % MaxBufferEntries
 }
