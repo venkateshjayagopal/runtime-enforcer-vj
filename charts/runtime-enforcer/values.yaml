@@ -101,10 +101,10 @@ agent:
   resources:
     limits:
       cpu: 500m
-      memory: 128Mi
+      memory: 256Mi
     requests:
       cpu: 500m
-      memory: 128Mi
+      memory: 256Mi
   hostPID: true
   # The podSecurityContext used by agent
   # @schema additionalProperties:true
