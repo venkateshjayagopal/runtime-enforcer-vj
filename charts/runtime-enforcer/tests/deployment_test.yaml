@@ -7,11 +7,10 @@ tests:
     set:
       operator:
         replicas: 5
-        manager:
-          image:
-            repository: somewhere/operator
-            tag: v9.9.9
-            pullPolicy: Always
+        image:
+          repository: somewhere/operator
+          tag: v9.9.9
+          pullPolicy: Always
     asserts:
       - equal:
           path: "spec.replicas"
@@ -29,8 +28,7 @@ tests:
   - it: "should include grpc Port argument"
     set:
       agent:
-        agent:
-          grpcExporterPort: "12"
+        grpcExporterPort: "12"
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].args"
@@ -39,8 +37,7 @@ tests:
   - it: "should set update interval argument"
     set:
       operator:
-        manager:
-          wpStatusUpdateInterval: "1s"
+        wpStatusUpdateInterval: "1s"
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].args"
@@ -72,10 +69,9 @@ tests:
   - it: "should add extra pod environment variables"
     set:
       operator:
-        manager:
-          env:
-            - name: EXTRA_ENV
-              value: extra_value
+        env:
+          - name: EXTRA_ENV
+            value: extra_value
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].env"

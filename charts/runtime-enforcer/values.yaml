@@ -1,112 +1,133 @@
 operator:
-  manager:
-    args:
-    - --metrics-bind-address=:8443
-    - --leader-elect
-    - --health-probe-bind-address=:8081
-    # operator.manager.env -- Additional environment variables
-    env: {}
-    containerSecurityContext:
-      runAsUser: 1000
-      allowPrivilegeEscalation: false
-      capabilities:
-        drop:
-        - ALL
-    image:
-      repository: ghcr.io/rancher-sandbox/runtime-enforcer/operator
-      tag: v0.3.0
-      pullPolicy: IfNotPresent
-    # To make the Pods "Guaranteed" (evicted last under node pressure), kubelet requires
-    # requests and limits are specified for all the containers and they are equal.
-    # Please refer to https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/#pod-selection-for-kubelet-eviction
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 500m
-        memory: 128Mi
-    wpStatusUpdateInterval: 30s
+  args:
+  - --metrics-bind-address=:8443
+  - --leader-elect
+  - --health-probe-bind-address=:8081
+  # operator.env -- Additional environment variables
+  # @schema additionalProperties:true
+  env: []
+  # The containerSecurityContext used by runtime-enforcer operator
+  # @schema additionalProperties:true
+  containerSecurityContext:
+    runAsUser: 1000
+    allowPrivilegeEscalation: false
+    capabilities:
+      drop:
+      - ALL
+  image:
+    repository: ghcr.io/rancher-sandbox/runtime-enforcer/operator
+    tag: v0.3.0
+    pullPolicy: IfNotPresent
+  # To make the Pods "Guaranteed" (evicted last under node pressure), kubelet requires
+  # requests and limits are specified for all the containers and they are equal.
+  # Please refer to https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/#pod-selection-for-kubelet-eviction
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 500m
+      memory: 128Mi
+  wpStatusUpdateInterval: 30s
+  # The podSecurityContext used by runtime-enforcer operator
+  # @schema additionalProperties:true
   podSecurityContext:
     runAsNonRoot: true
     seccompProfile:
       type: RuntimeDefault
   replicas: 1
-  # # PodDisruptionBudget for the operator Deployment. Disable by default.
-  # # When enabled, limits voluntary disruption (e.g. kubectl drain).
-  # pdb:
-  #   enabled: false
-  #   # minAvailable: at least 1 pod must stay available during a disruption.
-  #   minAvailable: 1
+  # PodDisruptionBudget for the operator Deployment. Disable by default.
+  # When enabled, limits voluntary disruption (e.g. kubectl drain).
+  pdb:
+    enabled: false
+    # minAvailable: at least 1 pod must stay available during a disruption.
+    minAvailable: 1
   serviceAccount:
+    # operator.serviceAccount.annotations -- Additional annotations to add to operator's service account.
+    # @schema additionalProperties:true
     annotations: {}
   tolerations: []
   # operator.podLabels -- Additional labels to add to the operator pods.
+  # @schema additionalProperties:true
   podLabels: {}
   # operator.podAnnotations -- Additional annotations to add to the operator pods.
+  # @schema additionalProperties:true
   podAnnotations: {}
   # operator.nodeSelector -- Node selector for the operator pods.
+  # @schema additionalProperties:true
   nodeSelector: {}
   # operator.affinity -- Affinity rules for the operator pods.
+  # @schema additionalProperties:true
   affinity: {}
 agent:
-  agent:
-    args:
-    - ""
-    # agent.agent.env -- Additional environment variables
-    env: {}
-    containerSecurityContext:
-      privileged: true
-      allowPrivilegeEscalation: true
-      # In some environments it is possible to run without full privileges.
-      # To do that put `privileged: false` and `allowPrivilegeEscalation: false`.
-      #
-      # Minimal capabilities required for eBPF operations:
-      # - CAP_BPF: Required for loading eBPF programs
-      # - CAP_PERFMON: Required for attaching tracing programs (kprobes/tracepoints)
-      # - CAP_SYS_RESOURCE: Required for removing memlock limits (rlimit.RemoveMemlock)
-      # - CAP_SYS_PTRACE: Required to access host cgroup filesystem
-      # - CAP_SYS_ADMIN: mitigation required for accessing BTF in older kernels (see: https://github.com/rancher-sandbox/runtime-enforcer/issues/152)
-      capabilities:
-        add:
-          - BPF
-          - PERFMON
-          - SYS_RESOURCE
-          - SYS_PTRACE
-          - SYS_ADMIN
-        drop:
-          - ALL
-    image:
-      repository: ghcr.io/rancher-sandbox/runtime-enforcer/agent
-      tag: v0.3.0
-      pullPolicy: IfNotPresent
-    grpcExporterPort: "50051"
-    # agent logger level. Can be one of: debug, info, warn, error.
-    logLevel: info
-    # To make the Pods "Guaranteed" (evicted last under node pressure), kubelet requires
-    # requests and limits are specified for all the containers and they are equal.
-    # Please refer to https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/#pod-selection-for-kubelet-eviction
-    resources:
-      limits:
-        cpu: 500m
-        memory: 128Mi
-      requests:
-        cpu: 500m
-        memory: 128Mi
+  args:
+  - ""
+  # agent.env -- Additional environment variables
+  # @schema additionalProperties:true
+  env: []
+  # The containerSecurityContext used by agent
+  # @schema additionalProperties:true
+  containerSecurityContext:
+    privileged: true
+    allowPrivilegeEscalation: true
+    # In some environments it is possible to run without full privileges.
+    # To do that put `privileged: false` and `allowPrivilegeEscalation: false`.
+    #
+    # Minimal capabilities required for eBPF operations:
+    # - CAP_BPF: Required for loading eBPF programs
+    # - CAP_PERFMON: Required for attaching tracing programs (kprobes/tracepoints)
+    # - CAP_SYS_RESOURCE: Required for removing memlock limits (rlimit.RemoveMemlock)
+    # - CAP_SYS_PTRACE: Required to access host cgroup filesystem
+    # - CAP_SYS_ADMIN: mitigation required for accessing BTF in older kernels (see: https://github.com/rancher-sandbox/runtime-enforcer/issues/152)
+    capabilities:
+      add:
+        - BPF
+        - PERFMON
+        - SYS_RESOURCE
+        - SYS_PTRACE
+        - SYS_ADMIN
+      drop:
+        - ALL
+  image:
+    repository: ghcr.io/rancher-sandbox/runtime-enforcer/agent
+    tag: v0.3.0
+    pullPolicy: IfNotPresent
+  grpcExporterPort: "50051"
+  # agent logger level. Can be one of: debug, info, warn, error.
+  logLevel: info
+  # To make the Pods "Guaranteed" (evicted last under node pressure), kubelet requires
+  # requests and limits are specified for all the containers and they are equal.
+  # Please refer to https://kubernetes.io/docs/concepts/scheduling-eviction/node-pressure-eviction/#pod-selection-for-kubelet-eviction
+  resources:
+    limits:
+      cpu: 500m
+      memory: 128Mi
+    requests:
+      cpu: 500m
+      memory: 128Mi
   hostPID: true
+  # The podSecurityContext used by agent
+  # @schema additionalProperties:true
   podSecurityContext:
+    runAsNonRoot: false
     seccompProfile:
       type: RuntimeDefault
   serviceAccount:
+    # agent.serviceAccount.annotations -- Additional annotations to add to agent's service account.
+    # @schema additionalProperties:true
     annotations: {}
   tolerations: []
   # agent.podLabels -- Additional labels to add to the agent pods.
+  # @schema additionalProperties:true
   podLabels: {}
   # agent.podAnnotations -- Additional annotations to add to the agent pods.
+  # @schema additionalProperties:true
   podAnnotations: {}
   # agent.nodeSelector -- Node selector for the agent pods.
+  # @schema additionalProperties:true
   nodeSelector: {}
   # agent.affinity -- Affinity rules for the agent pods.
+  # @schema additionalProperties:true
   affinity: {}
   nriSocketPath: /var/run/nri/
 kubernetesClusterDomain: cluster.local
@@ -120,18 +141,17 @@ learning:
   # learning.enabled controls whether learning mode is enabled for the entire cluster.
   # When disabled, no process learning occurs. Process enforcer remains unaffected.
   enabled: true
-  # Label selector for namespaces to include in learning (empty = all).
-  # You can set either a string or a YAML object.
-  #
-  # String format:
+  # Label selector for namespaces to include in learning.
   #   namespaceSelector: ""         # learn from all namespaces
   #   namespaceSelector: "env=prod" # namespaces with label env=prod
-  #
-  # YAML/JSON object format:
-  #   namespaceSelector:
+  namespaceSelector: ""
+  # Label selector for namespaces to include in learning.
+  #   namespaceSelectorObject: {}   # learn from all namespaces
+  #   namespaceSelectorObject:      # namespaces with label env=prod
   #     matchLabels:
   #       env: prod
-  namespaceSelector: ""
+  # @schema additionalProperties:true
+  namespaceSelectorObject: {}
 
 telemetry:
   # runtime-enforcer telemetry configuration allow one OpenTelemetry

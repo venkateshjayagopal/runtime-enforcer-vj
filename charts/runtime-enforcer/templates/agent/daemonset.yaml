@@ -42,16 +42,14 @@ spec:
         - --enable-learning
         {{- end }}
         {{- if .Values.learning.namespaceSelector }}
-        {{- if kindIs "string" .Values.learning.namespaceSelector }}
         - --learning-namespace-selector={{ .Values.learning.namespaceSelector }}
-        {{- else }}
-        - --learning-namespace-selector={{ .Values.learning.namespaceSelector | toJson }}
+        {{- else if .Values.learning.namespaceSelectorObject }}
+        - --learning-namespace-selector={{ .Values.learning.namespaceSelectorObject | toJson }}
         {{- end }}
-        {{- end }}
-        - --grpc-port={{ .Values.agent.agent.grpcExporterPort }}
+        - --grpc-port={{ .Values.agent.grpcExporterPort }}
         - --grpc-mtls-cert-dir={{ include "runtime-enforcer.grpc.certDir" . }}
-        - --log-level={{ .Values.agent.agent.logLevel }}
-        {{- toYaml .Values.agent.agent.args | nindent 8 }}
+        - --log-level={{ .Values.agent.logLevel }}
+        {{- toYaml .Values.agent.args | nindent 8 }}
         command:
         - /agent
         env:
@@ -77,12 +75,12 @@ spec:
       {{- end }}
       {{- end }}
       {{- end }}
-        {{- with .Values.agent.agent.env }}
+        {{- with .Values.agent.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        image: {{ .Values.agent.agent.image.repository }}:{{ .Values.agent.agent.image.tag
+        image: {{ .Values.agent.image.repository }}:{{ .Values.agent.image.tag
           | default .Chart.AppVersion }}
-        imagePullPolicy: {{ .Values.agent.agent.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.agent.image.pullPolicy }}
         name: agent
         startupProbe:
           httpGet:
@@ -92,8 +90,8 @@ spec:
           initialDelaySeconds: 5
           periodSeconds: 5
           failureThreshold: 8
-        resources: {{- toYaml .Values.agent.agent.resources | nindent 10 }}
-        securityContext: {{- toYaml .Values.agent.agent.containerSecurityContext | nindent 10 }}
+        resources: {{- toYaml .Values.agent.resources | nindent 10 }}
+        securityContext: {{- toYaml .Values.agent.containerSecurityContext | nindent 10 }}
         volumeMounts:
         - name: nri-socket
           mountPath: /var/run/nri/

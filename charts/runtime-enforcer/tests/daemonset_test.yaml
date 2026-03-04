@@ -6,11 +6,10 @@ tests:
   - it: "should allow image, and imagePullPolicy to be overridden"
     set:
       agent:
-        agent:
-          image:
-            repository: somewhere/agent
-            tag: v9.9.9
-            pullPolicy: Always
+        image:
+          repository: somewhere/agent
+          tag: v9.9.9
+          pullPolicy: Always
     asserts:
       - equal:
           path: "spec.template.spec.containers[0].image"
@@ -43,8 +42,7 @@ tests:
   - it: "should include grpc port argument"
     set:
       agent:
-        agent:
-          grpcExporterPort: "12"
+        grpcExporterPort: "12"
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].args"
@@ -70,8 +68,7 @@ tests:
   - it: "should include log level argument"
     set:
       agent:
-        agent:
-          logLevel: debug
+        logLevel: debug
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].args"
@@ -80,10 +77,9 @@ tests:
   - it: "should add extra pod environment variables"
     set:
       agent:
-        agent:
-          env:
-            - name: EXTRA_ENV
-              value: extra_value
+        env:
+          - name: EXTRA_ENV
+            value: extra_value
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].env"

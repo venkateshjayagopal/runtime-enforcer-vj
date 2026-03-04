@@ -54,12 +54,12 @@ operator_image = settings.get("operator").get("image")
 agent_image = settings.get("agent").get("image")
 
 helm_options = [
-        "operator.manager.image.repository=" + operator_image,
-        "agent.agent.image.repository=" + agent_image,
+        "operator.image.repository=" + operator_image,
+        "agent.image.repository=" + agent_image,
         "operator.replicas=1",
-        "operator.manager.containerSecurityContext.runAsUser=null",
+        "operator.containerSecurityContext.runAsUser=null",
         "operator.podSecurityContext.runAsNonRoot=false",
-        "agent.agent.containerSecurityContext.runAsUser=null",
+        "agent.containerSecurityContext.runAsUser=null",
         "agent.podSecurityContext.runAsNonRoot=false",
 ]
 

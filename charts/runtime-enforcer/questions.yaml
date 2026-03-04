@@ -4,7 +4,7 @@ questions:
   ###############################################################################
   # Operator
   ###############################################################################
-  - variable: operator.manager.image.pullPolicy
+  - variable: operator.image.pullPolicy
     type: enum
     options:
       - Always
@@ -28,7 +28,7 @@ questions:
 ###############################################################################
   # Agent
   ###############################################################################
-  - variable: agent.agent.image.pullPolicy
+  - variable: agent.image.pullPolicy
     type: enum
     options:
       - Always

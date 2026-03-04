@@ -34,22 +34,22 @@ spec:
       {{- end }}
       containers:
       - args: 
-        - --wp-status-reconciler-agent-grpc-port={{ .Values.agent.agent.grpcExporterPort }}
-        - --wp-status-reconciler-update-interval={{ .Values.operator.manager.wpStatusUpdateInterval }}
+        - --wp-status-reconciler-agent-grpc-port={{ .Values.agent.grpcExporterPort }}
+        - --wp-status-reconciler-update-interval={{ .Values.operator.wpStatusUpdateInterval }}
         - --wp-status-reconciler-agent-label-selector={{ include "runtime-enforcer.agent.labelSelectorString" . }}
         - --wp-status-reconciler-agent-grpc-mtls-cert-dir={{ include "runtime-enforcer.grpc.certDir" . }}
-        {{- toYaml .Values.operator.manager.args | nindent 8 }}
+        {{- toYaml .Values.operator.args | nindent 8 }}
         command:
         - /operator
         env:
         - name: KUBERNETES_CLUSTER_DOMAIN
           value: {{ quote .Values.kubernetesClusterDomain }}
-        {{- with .Values.operator.manager.env }}
+        {{- with .Values.operator.env }}
         {{- toYaml . | nindent 8 }}
         {{- end }}
-        image: {{ .Values.operator.manager.image.repository }}:{{ .Values.operator.manager.image.tag
+        image: {{ .Values.operator.image.repository }}:{{ .Values.operator.image.tag
           | default .Chart.AppVersion }}
-        imagePullPolicy: {{ .Values.operator.manager.image.pullPolicy }}
+        imagePullPolicy: {{ .Values.operator.image.pullPolicy }}
         livenessProbe:
           httpGet:
             path: /healthz
@@ -63,9 +63,9 @@ spec:
             port: 8081
           initialDelaySeconds: 5
           periodSeconds: 10
-        resources: {{- toYaml .Values.operator.manager.resources | nindent 10
+        resources: {{- toYaml .Values.operator.resources | nindent 10
           }}
-        securityContext: {{- toYaml .Values.operator.manager.containerSecurityContext
+        securityContext: {{- toYaml .Values.operator.containerSecurityContext
           | nindent 10 }}
         volumeMounts:
           - mountPath: /tmp/k8s-webhook-server/serving-certs/

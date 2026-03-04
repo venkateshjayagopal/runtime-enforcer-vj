@@ -77,12 +77,12 @@ func getCharts() []helmChart {
 			// no need of repoURL since this is a local installation
 			path: "../../charts/runtime-enforcer/",
 			helmOptions: []helm.Option{
-				helm.WithArgs("--set", "operator.manager.image.tag=latest"),
-				helm.WithArgs("--set", "agent.agent.image.tag=latest"),
+				helm.WithArgs("--set", "operator.image.tag=latest"),
+				helm.WithArgs("--set", "agent.image.tag=latest"),
 				helm.WithArgs("--set", "telemetry.mode=custom"),
 				helm.WithArgs("--set", "telemetry.tracing=true"),
 				// we need to reduce the timeout to see the wp status controller working properly in e2e tests
-				helm.WithArgs("--set", "operator.manager.wpStatusUpdateInterval=2s"),
+				helm.WithArgs("--set", "operator.wpStatusUpdateInterval=2s"),
 				helm.WithArgs(
 					"--set",
 					"telemetry.custom.endpoint=http://otel-collector-opentelemetry-collector."+otelCollectorNamespace+".svc.cluster.local:4317",

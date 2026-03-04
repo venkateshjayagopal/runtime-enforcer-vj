@@ -6,137 +6,159 @@
             "type": "object",
             "properties": {
                 "affinity": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
-                "agent": {
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "containerSecurityContext": {
                     "type": "object",
                     "properties": {
-                        "args": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
+                        "allowPrivilegeEscalation": {
+                            "type": "boolean"
                         },
-                        "containerSecurityContext": {
+                        "capabilities": {
                             "type": "object",
                             "properties": {
-                                "allowPrivilegeEscalation": {
-                                    "type": "boolean"
-                                },
-                                "capabilities": {
-                                    "type": "object",
-                                    "properties": {
-                                        "add": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        },
-                                        "drop": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
+                                "add": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
                                     }
                                 },
-                                "privileged": {
-                                    "type": "boolean"
-                                }
-                            }
-                        },
-                        "env": {
-                            "type": "object"
-                        },
-                        "grpcExporterPort": {
-                            "type": "string"
-                        },
-                        "image": {
-                            "type": "object",
-                            "properties": {
-                                "pullPolicy": {
-                                    "type": "string"
-                                },
-                                "repository": {
-                                    "type": "string"
-                                },
-                                "tag": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "logLevel": {
-                            "type": "string"
-                        },
-                        "resources": {
-                            "type": "object",
-                            "properties": {
-                                "limits": {
-                                    "type": "object",
-                                    "properties": {
-                                        "cpu": {
-                                            "type": "string"
-                                        },
-                                        "memory": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "requests": {
-                                    "type": "object",
-                                    "properties": {
-                                        "cpu": {
-                                            "type": "string"
-                                        },
-                                        "memory": {
-                                            "type": "string"
-                                        }
+                                "drop": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
                                     }
                                 }
-                            }
+                            },
+                            "additionalProperties": false
+                        },
+                        "privileged": {
+                            "type": "boolean"
                         }
-                    }
+                    },
+                    "additionalProperties": true
+                },
+                "env": {
+                    "type": "array",
+                    "additionalProperties": true
+                },
+                "grpcExporterPort": {
+                    "type": "string"
                 },
                 "hostPID": {
                     "type": "boolean"
                 },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "type": "string"
+                        },
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false
+                },
+                "logLevel": {
+                    "type": "string"
+                },
                 "nodeSelector": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "nriSocketPath": {
                     "type": "string"
                 },
                 "podAnnotations": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "podLabels": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "podSecurityContext": {
                     "type": "object",
                     "properties": {
+                        "runAsNonRoot": {
+                            "type": "boolean"
+                        },
                         "seccompProfile": {
                             "type": "object",
                             "properties": {
                                 "type": {
                                     "type": "string"
                                 }
-                            }
+                            },
+                            "additionalProperties": false
                         }
-                    }
+                    },
+                    "additionalProperties": true
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 },
                 "serviceAccount": {
                     "type": "object",
                     "properties": {
                         "annotations": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": true
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "tolerations": {
                     "type": "array"
                 }
-            }
+            },
+            "additionalProperties": false
+        },
+        "global": {
+            "description": "Global values shared between all subcharts",
+            "$comment": "Added automatically by 'helm schema' to allow this chart to be used as a Helm dependency, as the `additionalProperties` setting would otherwise collide with Helm's special 'global' values key.",
+            "type": [
+                "object",
+                "null"
+            ]
         },
         "imagePullSecrets": {
             "type": "array"
@@ -152,103 +174,93 @@
                 },
                 "namespaceSelector": {
                     "type": "string"
+                },
+                "namespaceSelectorObject": {
+                    "type": "object",
+                    "additionalProperties": true
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "operator": {
             "type": "object",
             "properties": {
                 "affinity": {
-                    "type": "object"
-                },
-                "manager": {
                     "type": "object",
-                    "properties": {
-                        "args": {
-                            "type": "array",
-                            "items": {
-                                "type": "string"
-                            }
-                        },
-                        "containerSecurityContext": {
-                            "type": "object",
-                            "properties": {
-                                "allowPrivilegeEscalation": {
-                                    "type": "boolean"
-                                },
-                                "capabilities": {
-                                    "type": "object",
-                                    "properties": {
-                                        "drop": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "string"
-                                            }
-                                        }
-                                    }
-                                },
-                                "runAsUser": {
-                                    "type": "integer"
-                                }
-                            }
-                        },
-                        "env": {
-                            "type": "object"
-                        },
-                        "image": {
-                            "type": "object",
-                            "properties": {
-                                "pullPolicy": {
-                                    "type": "string"
-                                },
-                                "repository": {
-                                    "type": "string"
-                                },
-                                "tag": {
-                                    "type": "string"
-                                }
-                            }
-                        },
-                        "resources": {
-                            "type": "object",
-                            "properties": {
-                                "limits": {
-                                    "type": "object",
-                                    "properties": {
-                                        "cpu": {
-                                            "type": "string"
-                                        },
-                                        "memory": {
-                                            "type": "string"
-                                        }
-                                    }
-                                },
-                                "requests": {
-                                    "type": "object",
-                                    "properties": {
-                                        "cpu": {
-                                            "type": "string"
-                                        },
-                                        "memory": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "wpStatusUpdateInterval": {
-                            "type": "string"
-                        }
+                    "additionalProperties": true
+                },
+                "args": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
                     }
                 },
+                "containerSecurityContext": {
+                    "type": "object",
+                    "properties": {
+                        "allowPrivilegeEscalation": {
+                            "type": "boolean"
+                        },
+                        "capabilities": {
+                            "type": "object",
+                            "properties": {
+                                "drop": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "runAsUser": {
+                            "type": "integer"
+                        }
+                    },
+                    "additionalProperties": true
+                },
+                "env": {
+                    "type": "array",
+                    "additionalProperties": true
+                },
+                "image": {
+                    "type": "object",
+                    "properties": {
+                        "pullPolicy": {
+                            "type": "string"
+                        },
+                        "repository": {
+                            "type": "string"
+                        },
+                        "tag": {
+                            "type": "string"
+                        }
+                    },
+                    "additionalProperties": false
+                },
                 "nodeSelector": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
+                },
+                "pdb": {
+                    "type": "object",
+                    "properties": {
+                        "enabled": {
+                            "type": "boolean"
+                        },
+                        "minAvailable": {
+                            "type": "integer"
+                        }
+                    },
+                    "additionalProperties": false
                 },
                 "podAnnotations": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "podLabels": {
-                    "type": "object"
+                    "type": "object",
+                    "additionalProperties": true
                 },
                 "podSecurityContext": {
                     "type": "object",
@@ -262,25 +274,63 @@
                                 "type": {
                                     "type": "string"
                                 }
-                            }
+                            },
+                            "additionalProperties": false
                         }
-                    }
+                    },
+                    "additionalProperties": true
                 },
                 "replicas": {
                     "type": "integer"
+                },
+                "resources": {
+                    "type": "object",
+                    "properties": {
+                        "limits": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        },
+                        "requests": {
+                            "type": "object",
+                            "properties": {
+                                "cpu": {
+                                    "type": "string"
+                                },
+                                "memory": {
+                                    "type": "string"
+                                }
+                            },
+                            "additionalProperties": false
+                        }
+                    },
+                    "additionalProperties": false
                 },
                 "serviceAccount": {
                     "type": "object",
                     "properties": {
                         "annotations": {
-                            "type": "object"
+                            "type": "object",
+                            "additionalProperties": true
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "tolerations": {
                     "type": "array"
+                },
+                "wpStatusUpdateInterval": {
+                    "type": "string"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "priorityClass": {
             "type": "object",
@@ -300,7 +350,8 @@
                 "value": {
                     "type": "integer"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "telemetry": {
             "type": "object",
@@ -320,7 +371,8 @@
                         "otelCollectorClientCertificateSecret": {
                             "type": "string"
                         }
-                    }
+                    },
+                    "additionalProperties": false
                 },
                 "metrics": {
                     "type": "boolean"
@@ -331,7 +383,8 @@
                 "tracing": {
                     "type": "boolean"
                 }
-            }
+            },
+            "additionalProperties": false
         },
         "vap": {
             "type": "object",
@@ -339,7 +392,9 @@
                 "enabled": {
                     "type": "boolean"
                 }
-            }
+            },
+            "additionalProperties": false
         }
-    }
+    },
+    "additionalProperties": false
 }

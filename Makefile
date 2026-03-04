@@ -266,7 +266,7 @@ $(HELM_VALUES_SCHEMA_JSON): | $(LOCALBIN)
 
 .PHONY: generate-chart
 generate-chart: $(HELM_VALUES_SCHEMA_JSON) ## Generate Helm chart values schema.
-	$(HELM_VALUES_SCHEMA_JSON) --values charts/runtime-enforcer/values.yaml --output charts/runtime-enforcer/values.schema.json
+	$(HELM_VALUES_SCHEMA_JSON) --no-additional-properties --values charts/runtime-enforcer/values.yaml --output charts/runtime-enforcer/values.schema.json
 
 # go-install-tool will 'go install' any package with custom target and name of binary, if it doesn't exist
 # $1 - target path with name of binary
