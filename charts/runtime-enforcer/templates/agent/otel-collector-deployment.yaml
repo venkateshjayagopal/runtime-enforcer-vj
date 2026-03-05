@@ -17,6 +17,9 @@ spec:
         app.kubernetes.io/name: {{ include "runtime-enforcer.fullname" . }}-otel-collector
         app.kubernetes.io/component: otel-collector
     spec:
+      {{- if .Values.priorityClass.name }}
+      priorityClassName: {{ .Values.priorityClass.name }}
+      {{- end }}
       {{- if .Values.imagePullSecrets }}
       imagePullSecrets:
       {{- toYaml .Values.imagePullSecrets | nindent 8 }}
