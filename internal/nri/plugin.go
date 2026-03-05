@@ -34,6 +34,21 @@ func (p *plugin) getWorkloadInfoAndLog(ctx context.Context, pod *api.PodSandbox)
 
 func podSandboxToPodMeta(pod *api.PodSandbox, workloadName string, workloadKind workloadkind.Kind) resolver.PodMeta {
 	return resolver.PodMeta{
+		// K8s static pods are created by the Kubelet with a pod uid that is different from the one
+		// assigned by the API server. The pod uid created by the kubelet will be put in the `kubernetes.io/config.hash`
+		// annotations of the pod. Example:
+		//
+		// apiVersion: v1
+		// kind: Pod
+		// metadata:
+		//   annotations:
+		//     kubernetes.io/config.hash: b3cae5f340c39f8cecdf0bddc7a4cdf1 // UID assigned by the kubelet
+		//     kubernetes.io/config.mirror: b3cae5f340c39f8cecdf0bddc7a4cdf1
+		//   name: kube-scheduler-kind-control-plane
+		//   namespace: kube-system
+		//   uid: a2533bd3-3631-48b3-88e4-2d139233d057 // UID assigned by the API server
+		//
+		// We cannot recover the UID assigned by the API-server from the NRI context.
 		ID:           pod.GetUid(),
 		Name:         pod.GetName(),
 		Namespace:    pod.GetNamespace(),
