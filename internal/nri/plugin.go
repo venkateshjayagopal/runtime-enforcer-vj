@@ -90,7 +90,7 @@ func (p *plugin) Synchronize(
 		workloadName, workloadKind := p.getWorkloadInfoAndLog(ctx, pod)
 		podData := resolver.PodInput{
 			Meta: resolver.PodMeta{
-				ID:           pod.GetId(),
+				ID:           pod.GetUid(),
 				Name:         pod.GetName(),
 				Namespace:    pod.GetNamespace(),
 				WorkloadName: workloadName,
@@ -127,7 +127,7 @@ func (p *plugin) StartContainer(
 	workloadName, workloadKind := p.getWorkloadInfoAndLog(ctx, pod)
 	podData := resolver.PodInput{
 		Meta: resolver.PodMeta{
-			ID:           pod.GetId(),
+			ID:           pod.GetUid(),
 			Name:         pod.GetName(),
 			Namespace:    pod.GetNamespace(),
 			Labels:       pod.GetLabels(),
@@ -155,7 +155,7 @@ func (p *plugin) StartContainer(
 // so it's possible that even if the container is stopped, we are still receiving some old events, and we want to enrich them.
 // That's the reason why we preferred `RemoveContainer` over `StopContainer`.
 func (p *plugin) RemoveContainer(ctx context.Context, pod *api.PodSandbox, container *api.Container) error {
-	if err := p.resolver.RemovePodContainerFromNri(pod.GetId(), container.GetId()); err != nil {
+	if err := p.resolver.RemovePodContainerFromNri(pod.GetUid(), container.GetId()); err != nil {
 		p.logger.ErrorContext(ctx, "failed to remove pod container from NRI",
 			"error", err)
 	}
