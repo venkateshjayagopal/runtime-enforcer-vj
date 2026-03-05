@@ -76,7 +76,7 @@ func (b *Buffer) Record(info ViolationInfo) {
 	}
 }
 
-// Drain returns all buffered records in chronological order (oldest first)
+// Drain returns all buffered records in reverse chronological order (newest first)
 // and resets the buffer.
 func (b *Buffer) Drain() []ViolationRecord {
 	b.mtx.Lock()
@@ -89,7 +89,7 @@ func (b *Buffer) Drain() []ViolationRecord {
 
 	records := make([]ViolationRecord, 0, n)
 	for i := range n {
-		idx := (b.tail + i) % MaxBufferEntries
+		idx := (b.head - 1 - i + MaxBufferEntries) % MaxBufferEntries
 		records = append(records, b.buf[idx])
 	}
 

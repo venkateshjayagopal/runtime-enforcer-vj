@@ -269,9 +269,9 @@ func TestMergeViolations(t *testing.T) {
 		{
 			name:     "scraped only",
 			existing: nil,
-			scraped:  []v1alpha1.ViolationRecord{makeRecord(1), makeRecord(2)},
+			scraped:  []v1alpha1.ViolationRecord{makeRecord(2), makeRecord(1)},
 			expected: &v1alpha1.ViolationStatus{
-				Violations: []v1alpha1.ViolationRecord{makeRecord(1), makeRecord(2)},
+				Violations: []v1alpha1.ViolationRecord{makeRecord(2), makeRecord(1)},
 			},
 		},
 		{
@@ -289,9 +289,9 @@ func TestMergeViolations(t *testing.T) {
 			existing: &v1alpha1.ViolationStatus{
 				Violations: []v1alpha1.ViolationRecord{makeRecord(1)},
 			},
-			scraped: []v1alpha1.ViolationRecord{makeRecord(2), makeRecord(3)},
+			scraped: []v1alpha1.ViolationRecord{makeRecord(3), makeRecord(2)},
 			expected: &v1alpha1.ViolationStatus{
-				Violations: []v1alpha1.ViolationRecord{makeRecord(2), makeRecord(3), makeRecord(1)},
+				Violations: []v1alpha1.ViolationRecord{makeRecord(3), makeRecord(2), makeRecord(1)},
 			},
 		},
 		{
