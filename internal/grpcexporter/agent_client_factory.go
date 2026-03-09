@@ -39,7 +39,7 @@ func NewAgentClientFactory(conf *AgentFactoryConfig) (*AgentClientFactory, error
 	var caCertPath string
 	if conf.MTLSEnabled {
 		if err := tlsutil.ValidateCertDir(conf.CertDirPath); err != nil {
-			return nil, err
+			return nil, fmt.Errorf("invalid certificate directory %q: %w", conf.CertDirPath, err)
 		}
 		tlsCertPath = filepath.Join(conf.CertDirPath, tlsutil.CertFile)
 		tlsKeyPath = filepath.Join(conf.CertDirPath, tlsutil.KeyFile)
