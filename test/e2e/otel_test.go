@@ -292,7 +292,8 @@ func portForwardPod(
 
 // fetchURL performs an HTTP GET and returns the response body as a string.
 func fetchURL(url string) (string, error) {
-	resp, err := http.Get(url)
+	client := &http.Client{Timeout: 10 * time.Second}
+	resp, err := client.Get(url)
 	if err != nil {
 		return "", err
 	}
