@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
 	"log/slog"
@@ -94,10 +93,10 @@ func setupWorkloadPolicyHandler(
 	}
 	// controller-runtime doesn't support a separate startup probe, so we use the readiness probe instead.
 	// See https://github.com/kubernetes-sigs/controller-runtime/issues/2644 for more details.
-	if err = ctrlMgr.AddReadyzCheck("policy readyz", func(_ *http.Request) error {
-		if !wpHandler.HasSynced() {
-			logger.Warn("workload policy handler has not yet synced")
-			return errors.New("workload policy handler has not yet synced")
+	if err = ctrlMgr.AddReadyzCheck("policy readyz", func(req *http.Request) error {
+		if syncErr := wpHandler.HasSynced(req.Context()); syncErr != nil {
+			logger.ErrorContext(req.Context(), "WorkloadPolicy handler is not synced", "error", syncErr)
+			return fmt.Errorf("WorkloadPolicy handler is not synced: %w", syncErr)
 		}
 		return nil
 	}); err != nil {
@@ -183,7 +182,6 @@ func startAgent(ctx context.Context, logger *slog.Logger, config Config) error {
 		return fmt.Errorf("failed to create resolver: %w", err)
 	}
 
-	// TODO: handle startup probe
 	if err = setupWorkloadPolicyHandler(ctrlMgr, logger, resolver); err != nil {
 		return err
 	}

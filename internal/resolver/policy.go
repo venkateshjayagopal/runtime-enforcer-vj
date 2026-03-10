@@ -246,7 +246,8 @@ func (r *Resolver) HandleWPDelete(wp *v1alpha1.WorkloadPolicy) error {
 	wpKey := wp.NamespacedName()
 	info := r.wpState[wpKey]
 	if info == nil {
-		return fmt.Errorf("workload policy does not exist in internal state: %s", wpKey)
+		// workload policy does not exist in internal state
+		return nil
 	}
 	delete(r.wpState, wpKey)
 
