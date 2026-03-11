@@ -48,29 +48,28 @@ func (r *WorkloadPolicyHandler) Reconcile(
 
 	var wp v1alpha1.WorkloadPolicy
 	if err = r.Get(ctx, req.NamespacedName, &wp); err != nil {
-		if errors.IsNotFound(err) {
-			// The item has been removed.
-			if err = r.resolver.HandleWPDelete(&v1alpha1.WorkloadPolicy{
-				ObjectMeta: metav1.ObjectMeta{
-					Name:      req.Name,
-					Namespace: req.Namespace,
-				},
-			}); err != nil {
-				return ctrl.Result{}, fmt.Errorf(
-					"failed to delete WorkloadPolicy '%s/%s': %w",
-					req.Namespace,
-					req.Name,
-					err,
-				)
-			}
-
-			return ctrl.Result{}, nil
+		if !errors.IsNotFound(err) {
+			return ctrl.Result{}, fmt.Errorf("failed to get WorkloadPolicy '%s': %w", req.NamespacedName, err)
 		}
-		return ctrl.Result{}, fmt.Errorf("failed to get WorkloadPolicy '%s/%s': %w", req.Namespace, req.Name, err)
+		// The item has been removed.
+		if err = r.resolver.HandleWPDelete(&v1alpha1.WorkloadPolicy{
+			ObjectMeta: metav1.ObjectMeta{
+				Name:      req.Name,
+				Namespace: req.Namespace,
+			},
+		}); err != nil {
+			return ctrl.Result{}, fmt.Errorf(
+				"failed to delete WorkloadPolicy '%s': %w",
+				req.NamespacedName,
+				err,
+			)
+		}
+
+		return ctrl.Result{}, nil
 	}
 
 	if err = r.resolver.HandleWPUpdate(&wp); err != nil {
-		return ctrl.Result{}, fmt.Errorf("failed to update WorkloadPolicy '%s/%s': %w", req.Namespace, req.Name, err)
+		return ctrl.Result{}, fmt.Errorf("failed to update WorkloadPolicy '%s': %w", req.NamespacedName, err)
 	}
 
 	return ctrl.Result{}, nil
@@ -94,14 +93,14 @@ func (r *WorkloadPolicyHandler) HasSynced(ctx context.Context) error {
 	for _, wp := range wps.Items {
 		status, ok := statuses[wp.NamespacedName()]
 		if !ok {
-			return fmt.Errorf("policy status not found for WorkloadPolicy '%s/%s'", wp.Namespace, wp.Name)
+			return fmt.Errorf("policy status not found for WorkloadPolicy '%s'", wp.NamespacedName())
 		}
 		if status.State != agentv1.PolicyState_POLICY_STATE_READY {
-			return fmt.Errorf("policy status is not ready for WorkloadPolicy '%s/%s'", wp.Namespace, wp.Name)
+			return fmt.Errorf("policy status is not ready for WorkloadPolicy '%s'", wp.NamespacedName())
 		}
 		mode := policymode.ParsePolicyModeToProto(wp.Spec.Mode)
 		if status.Mode != mode {
-			return fmt.Errorf("policy status is not ready for WorkloadPolicy '%s/%s'", wp.Namespace, wp.Name)
+			return fmt.Errorf("policy status is not ready for WorkloadPolicy '%s'", wp.NamespacedName())
 		}
 	}
 

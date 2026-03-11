@@ -196,8 +196,7 @@ func (r *Resolver) HandleWPUpdate(wp *v1alpha1.WorkloadPolicy) error {
 	wpKey := wp.NamespacedName()
 	info = r.wpState[wpKey]
 	if info == nil {
-		state := make(policyByContainer, len(wp.Spec.RulesByContainer))
-		info = &wpInfo{polByContainer: state}
+		info = &wpInfo{polByContainer: make(policyByContainer, len(wp.Spec.RulesByContainer))}
 		r.wpState[wpKey] = info
 	}
 
@@ -246,7 +245,11 @@ func (r *Resolver) HandleWPDelete(wp *v1alpha1.WorkloadPolicy) error {
 	wpKey := wp.NamespacedName()
 	info := r.wpState[wpKey]
 	if info == nil {
-		// workload policy does not exist in internal state
+		r.logger.Warn(
+			"a workload policy is being deleted but the item is not in the resolver cache",
+			"policy",
+			wp.NamespacedName(),
+		)
 		return nil
 	}
 	delete(r.wpState, wpKey)
