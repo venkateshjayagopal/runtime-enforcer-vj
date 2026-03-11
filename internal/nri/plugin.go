@@ -18,6 +18,7 @@ type plugin struct {
 	logger   *slog.Logger
 	resolver *resolver.Resolver
 	lastErr  error
+	failOpen bool
 }
 
 // podLogger returns a logger pre-enriched with the pod fields.
@@ -149,8 +150,9 @@ func (p *plugin) Synchronize(
 			"containers", containers,
 		)
 		if err := p.resolver.AddPodContainerFromNri(podData); err != nil {
-			podLogger.ErrorContext(ctx, "failed to add pod container from NRI",
-				"error", err)
+			// This could be recoverable. Returning an error so we can retry.
+			podLogger.ErrorContext(ctx, "failed to add pod container from NRI", "error", err)
+			return nil, fmt.Errorf("failed to add pod container from NRI: %w", err)
 		}
 	}
 	// Mark resolver as synchronized, so old agent can be safely removed.
@@ -166,13 +168,36 @@ func (p *plugin) StartContainer(
 	containerLogger := p.containerLogger(pod, container)
 	containerLogger.InfoContext(ctx, "Starting container")
 
+	handleError := func(reason string, err error) error {
+		if p.failOpen {
+			containerLogger.WarnContext(
+				ctx,
+				"container is starting WITHOUT enforcement due to NRI_FAILOPEN",
+				"reason", reason,
+				"error", err,
+			)
+			return nil
+		}
+		containerLogger.ErrorContext(
+			ctx,
+			"Runtime-enforcer has prevented the container from starting. To change this behavior, set environment variable NRI_FAILOPEN to true",
+			"reason", reason,
+			"error", err,
+		)
+		return fmt.Errorf(
+			"%s: %w. Runtime-enforcer has prevented the container '%s/%s' from starting. To change this behavior, set environment variable NRI_FAILOPEN to true",
+			reason,
+			err,
+			pod.GetName(),
+			container.GetName(),
+		)
+	}
+
 	cgroupID, err := cgroupFromContainer(container)
 	if err != nil {
-		// this should never happen but if we are not able to obtain the cgroup ID, it's useless to add the container
-		// to the cache, nobody will ever query this entry into the cache.
-		containerLogger.ErrorContext(ctx, "failed to get cgroup ID from container",
-			"error", err)
-		return nil
+		// this should never happen because we've succeeded before in Synchronize() call.
+		// When this happens, it indicates a serious inconsistency in the system.
+		return handleError("failed to get cgroup ID from container", err)
 	}
 
 	workloadName, workloadKind := p.getWorkloadInfoAndLog(ctx, pod)
@@ -188,8 +213,7 @@ func (p *plugin) StartContainer(
 	}
 
 	if err = p.resolver.AddPodContainerFromNri(podData); err != nil {
-		containerLogger.ErrorContext(ctx, "failed to add pod container from NRI",
-			"error", err)
+		return handleError("failed to add pod container from NRI", err)
 	}
 	return nil
 }
