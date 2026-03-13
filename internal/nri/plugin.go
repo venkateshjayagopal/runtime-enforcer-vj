@@ -169,28 +169,24 @@ func (p *plugin) StartContainer(
 	containerLogger.InfoContext(ctx, "Starting container")
 
 	handleError := func(reason string, err error) error {
-		if p.failOpen {
-			containerLogger.WarnContext(
-				ctx,
-				"container is starting WITHOUT enforcement due to NRI_FAILOPEN",
-				"reason", reason,
-				"error", err,
-			)
-			return nil
-		}
-		containerLogger.ErrorContext(
-			ctx,
-			"Runtime-enforcer has prevented the container from starting. To change this behavior, set environment variable NRI_FAILOPEN to true",
+		logger := containerLogger.With(
 			"reason", reason,
 			"error", err,
 		)
-		return fmt.Errorf(
+		if p.failOpen {
+			logger.ErrorContext(ctx, "container is starting WITHOUT enforcement due to NRI_FAILOPEN")
+			return nil
+		}
+		nriErr := fmt.Errorf(
 			"%s: %w. Runtime-enforcer has prevented the container '%s/%s' from starting. To change this behavior, set environment variable NRI_FAILOPEN to true",
 			reason,
 			err,
 			pod.GetName(),
 			container.GetName(),
 		)
+
+		logger.ErrorContext(ctx, nriErr.Error())
+		return nriErr
 	}
 
 	cgroupID, err := cgroupFromContainer(container)
