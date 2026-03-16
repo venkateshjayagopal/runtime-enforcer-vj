@@ -125,7 +125,7 @@ func (p *plugin) Synchronize(
 			continue
 		}
 
-		podLog := p.podLogger(pod)
+		podLogger := p.podLogger(pod)
 		containers, ok := tmpSandboxes[pod.GetId()]
 		if !ok {
 			// no containers found for pod. There are at least 2 possible reasons for this:
@@ -134,7 +134,7 @@ func (p *plugin) Synchronize(
 			// See https://github.com/containerd/containerd/blob/1677a17964311325ed1c31e2c0a3589ce6d5c30d/pkg/nri/nri.go#L446 and https://github.com/containerd/containerd/blob/ff6324c9532b60137729a0e75fc589a2b20242b7/pkg/cri/nri/nri_api_linux.go#L393.
 			// In both cases there is no reason to add the pod sandbox to the cache,
 			// since we have no containers.
-			podLog.InfoContext(ctx, "received pod sandbox with no containers")
+			podLogger.InfoContext(ctx, "received pod sandbox with no containers")
 			continue
 		}
 
@@ -145,11 +145,11 @@ func (p *plugin) Synchronize(
 		}
 
 		// Add also the full list for debugging purpose
-		podLog.DebugContext(ctx, "Synchronize pod with containers",
+		podLogger.DebugContext(ctx, "Synchronize pod with containers",
 			"containers", containers,
 		)
 		if err := p.resolver.AddPodContainerFromNri(podData); err != nil {
-			podLog.ErrorContext(ctx, "failed to add pod container from NRI",
+			podLogger.ErrorContext(ctx, "failed to add pod container from NRI",
 				"error", err)
 		}
 	}
@@ -163,14 +163,14 @@ func (p *plugin) StartContainer(
 	pod *api.PodSandbox,
 	container *api.Container,
 ) error {
-	containerLog := p.containerLogger(pod, container)
-	containerLog.InfoContext(ctx, "Starting container")
+	containerLogger := p.containerLogger(pod, container)
+	containerLogger.InfoContext(ctx, "Starting container")
 
 	cgroupID, err := cgroupFromContainer(container)
 	if err != nil {
 		// this should never happen but if we are not able to obtain the cgroup ID, it's useless to add the container
 		// to the cache, nobody will ever query this entry into the cache.
-		containerLog.ErrorContext(ctx, "failed to get cgroup ID from container",
+		containerLogger.ErrorContext(ctx, "failed to get cgroup ID from container",
 			"error", err)
 		return nil
 	}
@@ -188,7 +188,7 @@ func (p *plugin) StartContainer(
 	}
 
 	if err = p.resolver.AddPodContainerFromNri(podData); err != nil {
-		containerLog.ErrorContext(ctx, "failed to add pod container from NRI",
+		containerLogger.ErrorContext(ctx, "failed to add pod container from NRI",
 			"error", err)
 	}
 	return nil
@@ -199,10 +199,10 @@ func (p *plugin) StartContainer(
 // so it's possible that even if the container is stopped, we are still receiving some old events, and we want to enrich them.
 // That's the reason why we preferred `RemoveContainer` over `StopContainer`.
 func (p *plugin) RemoveContainer(ctx context.Context, pod *api.PodSandbox, container *api.Container) error {
-	containerLog := p.containerLogger(pod, container)
-	containerLog.InfoContext(ctx, "Removing container")
+	containerLogger := p.containerLogger(pod, container)
+	containerLogger.InfoContext(ctx, "Removing container")
 	if err := p.resolver.RemovePodContainerFromNri(pod.GetUid(), container.GetId()); err != nil {
-		containerLog.ErrorContext(ctx, "failed to remove pod container from cache",
+		containerLogger.ErrorContext(ctx, "failed to remove pod container from cache",
 			"error", err,
 		)
 	}
