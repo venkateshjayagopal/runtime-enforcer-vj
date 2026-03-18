@@ -520,7 +520,7 @@ int BPF_PROG(enforce_cgroup_policy, struct linux_binprm *bprm) {
 			return 0;
 		}
 		levt->cgid = tg_get_current_cgroup_id();
-		levt->cg_tracker_id = cgrp_get_tracker_id(levt->cgid);
+		levt->cg_tracker_id = cg_tracker_id;
 		levt->mode = 0;
 
 		u32 loffset = populate_evt_with_path(levt, bprm);
@@ -532,10 +532,14 @@ int BPF_PROG(enforce_cgroup_policy, struct linux_binprm *bprm) {
 		                                  SAFE_PATH_LEN(levt->path_len + 1),
 		                                  &levt->path[SAFE_PATH_ACCESS(loffset)]);
 		if(lerr != 0) {
+			emit_log_event(LOG_FAIL_TO_COPY_EXEC_PATH);
 			return 0;
 		}
 
-		bpf_ringbuf_output(&ringbuf_execve, levt, 19 + SAFE_PATH_LEN(levt->path_len), 0);
+		lerr = bpf_ringbuf_output(&ringbuf_execve, levt, 19 + SAFE_PATH_LEN(levt->path_len), 0);
+		if(lerr != 0) {
+			emit_log_event(LOG_DROP_EXEC_EVENT);
+		}
 		return 0;
 	}
 
