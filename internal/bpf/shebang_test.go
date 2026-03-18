@@ -9,26 +9,12 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// resolveInterpreterPath returns the real filesystem path of the given
-// interpreter binary, resolving any symlinks. This matches what the
-// kernel's VFS layer does before the BPF hook sees bprm->file->f_path.
-func resolveInterpreterPath(t *testing.T, interpreter string) string {
-	t.Helper()
-	resolved, err := filepath.EvalSymlinks(interpreter)
-	require.NoError(t, err, "failed to resolve interpreter path %s", interpreter)
-	return resolved
-}
-
 // createShebangScript creates a temporary executable script with the
 // given shebang line and returns its path.
 func createShebangScript(t *testing.T, interpreter string) string {
 	t.Helper()
-	script := []byte("#!" + interpreter + "\n")
-
-	// Use a short, predictable path so it falls in the first string map bucket.
 	path := filepath.Join(t.TempDir(), "test.sh")
-	err := os.WriteFile(path, script, 0755)
-	require.NoError(t, err, "failed to write shebang script")
+	require.NoError(t, os.WriteFile(path, []byte("#!"+interpreter+"\n"), 0755), "failed to write shebang script")
 	return path
 }
 
@@ -37,7 +23,8 @@ func TestShebangScriptLearning(t *testing.T) {
 	require.NoError(t, err, "Failed to create cgroup runner")
 	defer runner.close()
 
-	scriptPath := createShebangScript(t, "/usr/bin/bash")
+	const interpreter = "/usr/bin/true"
+	scriptPath := createShebangScript(t, interpreter)
 
 	// When a shebang script is executed, the LSM hook fires for
 	// both the script and the interpreter. Without the fix, only
@@ -47,6 +34,36 @@ func TestShebangScriptLearning(t *testing.T) {
 		channel:         learningChannel,
 		shouldFindEvent: true,
 	}), "script path must be learned via the LSM hook")
+
+	// The interpreter itself must NOT appear as a learned event;
+	// only the script path should be emitted.
+	resolvedInterpreter, err := filepath.EvalSymlinks(interpreter)
+	require.NoError(t, err, "failed to resolve interpreter path")
+	err = runner.manager.findEventInChannel(learningChannel, runner.cgInfo.id, resolvedInterpreter)
+	require.Error(t, err, "interpreter must not be learned, only the script path")
+
+	// Once a policy is active, learning events must stop being emitted.
+	mockPolicyID := uint64(44)
+	err = runner.manager.GetPolicyUpdateBinariesFunc()(
+		mockPolicyID,
+		[]string{resolvedInterpreter, scriptPath},
+		AddValuesToPolicy,
+	)
+	require.NoError(t, err)
+
+	err = runner.manager.GetPolicyModeUpdateFunc()(mockPolicyID, policymode.Protect, UpdateMode)
+	require.NoError(t, err)
+
+	err = runner.manager.GetCgroupPolicyUpdateFunc()(
+		mockPolicyID, []uint64{runner.cgInfo.id}, AddPolicyToCgroups,
+	)
+	require.NoError(t, err)
+
+	require.NoError(t, runner.runAndFindCommand(&runCommandArgs{
+		command:         scriptPath,
+		channel:         learningChannel,
+		shouldFindEvent: false,
+	}), "script path must not be learned once a policy is active")
 }
 
 func TestShebangScriptEnforcement(t *testing.T) {
@@ -55,7 +72,8 @@ func TestShebangScriptEnforcement(t *testing.T) {
 	defer runner.close()
 
 	const interpreter = "/usr/bin/bash"
-	resolvedInterpreter := resolveInterpreterPath(t, interpreter)
+	resolvedInterpreter, err := filepath.EvalSymlinks(interpreter)
+	require.NoError(t, err, "failed to resolve interpreter path")
 	scriptPath := createShebangScript(t, interpreter)
 
 	mockPolicyID := uint64(44)
