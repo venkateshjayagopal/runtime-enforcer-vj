@@ -536,6 +536,12 @@ int BPF_PROG(enforce_cgroup_policy, struct linux_binprm *bprm) {
 			return 0;
 		}
 
+		// this is used for debug during development is never used in production
+		bpf_printk("sent execve event, path: %s, cgid: %d, cg_tracker_id: %d",
+		           levt->path,
+		           levt->cgid,
+		           levt->cg_tracker_id);
+
 		lerr = bpf_ringbuf_output(&ringbuf_execve, levt, 19 + SAFE_PATH_LEN(levt->path_len), 0);
 		if(lerr != 0) {
 			emit_log_event(LOG_DROP_EXEC_EVENT);
