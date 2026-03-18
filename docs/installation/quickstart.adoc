@@ -229,6 +229,8 @@ Since we are using a Deployment, the correct approach is to add the label to the
 
 WARNING: The `security.rancher.io/policy` label must be set at Pod creation time only. Changing this label on a running Pod (adding, removing, or modifying its value) is prohibited.
 
+WARNING: By default in the runtime-enforcer Helm chart, pods with a non-existing policy will be prevented from running. This ensures that when a pod starts, it has all protection ready. To enable fail-open behavior, set `agent.nriFailopen=true`.
+
 ```bash
 kubectl patch deployment ubuntu-deployment --type=merge -p '{"spec":{"template":{"metadata":{"labels":{"security.rancher.io/policy":"deploy-ubuntu-deployment"}}}}}'
 # wait for the new pods to be ready

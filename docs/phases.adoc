@@ -60,6 +60,8 @@ Runtime-enforcer uses this label to decide which pods the policy applies to.
 +
 WARNING: The `security.rancher.io/policy` label must be set at Pod creation time only. Changing this label on a running Pod (adding, removing, or modifying its value) is prohibited.
 
+WARNING: By default in the runtime-enforcer Helm chart, pods with a non-existing policy will be prevented from running. This ensures that when a pod starts, it has all protection ready. To enable fail-open behavior, set `agent.nriFailopen=true`.
+
 * *Leave*
 ** *Monitor → Protect*: update the `WorkloadPolicy` and set `.spec.mode: protect`.
 ** *Monitor → Learn*: remove the binding label from workloads/pods, delete the `WorkloadPolicy`, then delete the existing `WorkloadPolicyProposal`, or set `security.rancher.io/policy-ready=false` on the proposal to resume learning.
