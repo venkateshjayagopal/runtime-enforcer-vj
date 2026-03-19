@@ -35,19 +35,7 @@ func TestShebangScript(t *testing.T) {
 
 	// Once a policy is active, learning events must stop being emitted.
 	mockPolicyID := uint64(44)
-	err = runner.manager.GetPolicyUpdateBinariesFunc()(
-		mockPolicyID,
-		[]string{scriptPath},
-		AddValuesToPolicy,
-	)
-	require.NoError(t, err)
-
-	err = runner.manager.GetPolicyModeUpdateFunc()(mockPolicyID, policymode.Protect, UpdateMode)
-	require.NoError(t, err)
-
-	err = runner.manager.GetCgroupPolicyUpdateFunc()(
-		mockPolicyID, []uint64{runner.cgInfo.id}, AddPolicyToCgroups,
-	)
+	err = runner.populatePolicyForRunnerCgroup(mockPolicyID, policymode.Protect, []string{scriptPath})
 	require.NoError(t, err)
 
 	require.NoError(t, runner.runAndFindCommand(&runCommandArgs{
