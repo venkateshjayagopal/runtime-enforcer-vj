@@ -26,16 +26,16 @@ helm_resource(
 load("ext://namespace", "namespace_create")
 namespace_create("runtime-enforcer")
 
-operator_image = settings.get("operator").get("image")
+controller_image = settings.get("controller").get("image")
 agent_image = settings.get("agent").get("image")
 debugger_image = settings.get("debugger").get("image")
 
 helm_options = [
-        "operator.image.repository=" + operator_image,
+        "controller.image.repository=" + controller_image,
         "agent.image.repository=" + agent_image,
-        "operator.replicas=1",
-        "operator.containerSecurityContext.runAsUser=null",
-        "operator.podSecurityContext.runAsNonRoot=false",
+        "controller.replicas=1",
+        "controller.containerSecurityContext.runAsUser=null",
+        "controller.podSecurityContext.runAsNonRoot=false",
         "agent.containerSecurityContext.runAsUser=null",
         "agent.podSecurityContext.runAsNonRoot=false",
         "debugger.enabled=true",
@@ -55,34 +55,34 @@ k8s_yaml(yaml)
 
 # Hot reloading containers
 local_resource(
-    "operator_tilt",
-    "make operator",
+    "controller_tilt",
+    "make controller",
     deps=[
         "go.mod",
         "go.sum",
-        "cmd/operator",
+        "cmd/controller",
         "api",
         "internal/controller",
         "proto",
     ],
 )
 
-entrypoint = ["/operator"]
-dockerfile = "./hack/Dockerfile.operator.tilt"
+entrypoint = ["/controller"]
+dockerfile = "./hack/Dockerfile.controller.tilt"
 
 load("ext://restart_process", "docker_build_with_restart")
 docker_build_with_restart(
-    operator_image,
+    controller_image,
     ".",
     dockerfile=dockerfile,
     entrypoint=entrypoint,
     # `only` here is important, otherwise, the container will get updated
     # on _any_ file change.
     only=[
-        "./bin/operator",
+        "./bin/controller",
     ],
     live_update=[
-        sync("./bin/operator", "/operator"),
+        sync("./bin/controller", "/controller"),
     ],
 )
 

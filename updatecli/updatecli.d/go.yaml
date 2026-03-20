@@ -31,7 +31,7 @@ targets:
     scmid: default
     spec:
       files:
-        - package/Dockerfile.operator
+        - package/Dockerfile.controller
         - package/Dockerfile.agent
       instruction:
         keyword: FROM

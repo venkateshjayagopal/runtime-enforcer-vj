@@ -200,7 +200,7 @@ func main() {
 	slogHandler := httpserverlogger.NewServerErrorLogHandler(
 		slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}),
 	)
-	slogger := slog.New(slogHandler).With("component", "operator")
+	slogger := slog.New(slogHandler).With("component", "controller")
 	slog.SetDefault(slogger)
 	ctrlLogger := logr.FromSlogHandler(slogger.Handler())
 	ctrl.SetLogger(ctrlLogger)

@@ -2,28 +2,28 @@
 ---
 questions:
   ###############################################################################
-  # Operator
+  # Controller
   ###############################################################################
-  - variable: operator.image.pullPolicy
+  - variable: controller.image.pullPolicy
     type: enum
     options:
       - Always
       - IfNotPresent
       - Never
     default: IfNotPresent
-    label: Operator Image Pull Policy
+    label: Controller Image Pull Policy
     description: |
-      Pull policy of the Operator Deployment
-    group: Operator
+      Pull policy of the Controller Deployment
+    group: Controller
 
-  - variable: operator.replicas
+  - variable: controller.replicas
     type: int
     default: 1
     min: 1
-    label: Operator Replicas
+    label: Controller Replicas
     description: |
-      Number of replicas of the Operator Deployment
-    group: Operator
+      Number of replicas of the Controller Deployment
+    group: Controller
 
 ###############################################################################
   # Agent

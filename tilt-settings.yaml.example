@@ -1,5 +1,5 @@
-operator: 
-    image: <your-repository>/operator
+controller:
+    image: <your-repository>/controller
 agent: 
     image: <your-repository>/agent
     enable-otel-tracing: true/false

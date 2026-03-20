@@ -7,7 +7,7 @@ metadata:
 roleRef:
   apiGroup: rbac.authorization.k8s.io
   kind: ClusterRole
-  name: '{{ include "runtime-enforcer.fullname" . }}-operator'
+  name: '{{ include "runtime-enforcer.fullname" . }}-controller'
 subjects:
 - kind: ServiceAccount
   name: '{{ include "runtime-enforcer.fullname" . }}-controller-manager'

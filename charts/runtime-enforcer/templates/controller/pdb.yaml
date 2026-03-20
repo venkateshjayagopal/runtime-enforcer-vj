@@ -1,4 +1,4 @@
-{{- if and .Values.operator.pdb .Values.operator.pdb.enabled }}
+{{- if and .Values.controller.pdb .Values.controller.pdb.enabled }}
 apiVersion: policy/v1
 kind: PodDisruptionBudget
 metadata:
@@ -6,10 +6,10 @@ metadata:
   labels:
     {{- include "runtime-enforcer.labels" . | nindent 4 }}
 spec:
-  {{- $pdbSpec := omit .Values.operator.pdb "enabled" }}
+  {{- $pdbSpec := omit .Values.controller.pdb "enabled" }}
   {{- $pdbSpec | toYaml | nindent 2 }}
   selector:
     matchLabels:
-      app.kubernetes.io/component: operator
+      app.kubernetes.io/component: controller
       {{- include "runtime-enforcer.selectorLabels" . | nindent 6 }}
 {{- end }}

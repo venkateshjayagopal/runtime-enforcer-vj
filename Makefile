@@ -34,10 +34,10 @@ help: ## Display this help.
 
 .PHONY: manifests
 manifests: controller-gen ## Generate WebhookConfiguration, ClusterRole and CustomResourceDefinition objects.
-	$(CONTROLLER_GEN) rbac:roleName=operator-role crd webhook paths="./api/v1alpha1" paths="./internal/controller" output:crd:artifacts:config=charts/runtime-enforcer/templates/crd output:rbac:artifacts:config=charts/runtime-enforcer/templates/operator
+	$(CONTROLLER_GEN) rbac:roleName=controller-role crd webhook paths="./api/v1alpha1" paths="./internal/controller" output:crd:artifacts:config=charts/runtime-enforcer/templates/crd output:rbac:artifacts:config=charts/runtime-enforcer/templates/controller
 	$(CONTROLLER_GEN) rbac:roleName=agent-role paths="./cmd/agent" paths="./internal/eventhandler" paths="./internal/workloadpolicyhandler" output:rbac:artifacts:config=charts/runtime-enforcer/templates/agent
 	$(CONTROLLER_GEN) rbac:roleName=debugger-role paths="./cmd/debugger" output:rbac:artifacts:config=charts/runtime-enforcer/templates/debugger
-	sed -i 's/operator-role/{{ include "runtime-enforcer.fullname" . }}-operator/' charts/runtime-enforcer/templates/operator/role.yaml
+	sed -i 's/controller-role/{{ include "runtime-enforcer.fullname" . }}-controller/' charts/runtime-enforcer/templates/controller/role.yaml
 	sed -i 's/agent-role/{{ include "runtime-enforcer.fullname" . }}-agent/' charts/runtime-enforcer/templates/agent/role.yaml
 	sed -i 's/debugger-role/{{ include "runtime-enforcer.fullname" . }}-debugger/' charts/runtime-enforcer/templates/debugger/role.yaml
 	for f in ./charts/runtime-enforcer/templates/crd/*.yaml; do \
@@ -57,7 +57,7 @@ build-$(1)-image: generate-ebpf vet
 E2E_DEPS += build-$(1)-image
 endef
 
-TARGET=operator agent debugger
+TARGET=controller agent debugger
 $(foreach T,$(TARGET),$(eval $(call BUILD_template,$(T))))
 
 .PHONY: generate
@@ -111,9 +111,9 @@ lint-config: golangci-lint ## Verify golangci-lint linter configuration
 
 ##@ Build
 
-.PHONY: operator
-operator: generate-ebpf fmt ## Build manager binary.
-	CGO_ENABLED=0 GOOS=linux go build -o bin/operator ./cmd/operator
+.PHONY: controller
+controller: generate-ebpf fmt ## Build manager binary.
+	CGO_ENABLED=0 GOOS=linux go build -o bin/controller ./cmd/controller
 
 .PHONY: test-bpf
 test-bpf: generate-ebpf ## Run bpf tests.
@@ -154,7 +154,7 @@ debugger: generate-ebpf fmt ## Build debugger binary.
 
 .PHONY: run
 run: manifests generate fmt vet ## Run a controller from your host.
-	go run ./cmd/operator/main.go
+	go run ./cmd/controller/main.go
 
 ##@ Dependencies
 

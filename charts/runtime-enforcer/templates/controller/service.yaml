@@ -5,7 +5,7 @@ metadata:
   namespace: {{ .Release.Namespace }}
   labels:
     {{ include "runtime-enforcer.labels" .| nindent 4 }}
-    app.kubernetes.io/component: operator
+    app.kubernetes.io/component: controller
 spec:
   ports:
     - port: 443
@@ -13,4 +13,4 @@ spec:
       targetPort: 9443
   selector:
     {{ include "runtime-enforcer.selectorLabels" .| nindent 4 }}
-    app.kubernetes.io/component: operator
+    app.kubernetes.io/component: controller

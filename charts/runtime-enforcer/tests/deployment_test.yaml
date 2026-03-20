@@ -1,14 +1,14 @@
-suite: "Operator Deployment Tests"
+suite: "Controller Deployment Tests"
 templates:
-  - "templates/operator/deployment.yaml"
+  - "templates/controller/deployment.yaml"
 
 tests:
   - it: "should allow image, and imagePullPolicy to be overridden"
     set:
-      operator:
+      controller:
         replicas: 5
         image:
-          repository: somewhere/operator
+          repository: somewhere/controller
           tag: v9.9.9
           pullPolicy: Always
     asserts:
@@ -17,7 +17,7 @@ tests:
           value: 5
       - equal:
           path: "spec.template.spec.containers[0].image"
-          value: "somewhere/operator:v9.9.9"
+          value: "somewhere/controller:v9.9.9"
       - equal:
           path: "spec.template.spec.containers[0].imagePullPolicy"
           value: "Always"
@@ -36,14 +36,14 @@ tests:
 
   - it: "should set update interval argument"
     set:
-      operator:
+      controller:
         wpStatusUpdateInterval: "1s"
     asserts:
       - contains:
           path: "spec.template.spec.containers[0].args"
           content: "--wp-status-reconciler-update-interval=1s"
 
-  - it: "operator should get the correct label selector string"
+  - it: "controller should get the correct label selector string"
     asserts:
       - contains:
           path: spec.template.spec.containers[0].args
@@ -51,7 +51,7 @@ tests:
 
   - it: "check tolerations"
     set:
-      operator:
+      controller:
         tolerations:
           - key: "dedicated"
             operator: "Equal"
@@ -68,7 +68,7 @@ tests:
 
   - it: "should add extra pod environment variables"
     set:
-      operator:
+      controller:
         env:
           - name: EXTRA_ENV
             value: extra_value
@@ -81,7 +81,7 @@ tests:
 
   - it: "should add extra pod labels"
     set:
-      operator:
+      controller:
         podLabels:
           environment: production
           team: infra
@@ -95,7 +95,7 @@ tests:
 
   - it: "should add extra pod annotations"
     set:
-      operator:
+      controller:
         podAnnotations:
           prometheus.io/scrape: "true"
           prometheus.io/port: "8443"
@@ -109,7 +109,7 @@ tests:
 
   - it: "should set nodeSelector"
     set:
-      operator:
+      controller:
         nodeSelector:
           kubernetes.io/os: linux
           node-role: control-plane
@@ -123,7 +123,7 @@ tests:
 
   - it: "should not render nodeSelector when empty"
     set:
-      operator:
+      controller:
         nodeSelector: {}
     asserts:
       - notExists:
@@ -131,7 +131,7 @@ tests:
 
   - it: "should set affinity"
     set:
-      operator:
+      controller:
         affinity:
           podAntiAffinity:
             requiredDuringSchedulingIgnoredDuringExecution:
@@ -146,7 +146,7 @@ tests:
 
   - it: "should not render affinity when empty"
     set:
-      operator:
+      controller:
         affinity: {}
     asserts:
       - notExists:

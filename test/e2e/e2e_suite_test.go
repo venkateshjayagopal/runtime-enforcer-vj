@@ -63,12 +63,12 @@ func getCharts() []helmChart {
 			// no need of repoURL since this is a local installation
 			path: "../../charts/runtime-enforcer/",
 			helmOptions: []helm.Option{
-				helm.WithArgs("--set", "operator.image.tag=latest"),
+				helm.WithArgs("--set", "controller.image.tag=latest"),
 				helm.WithArgs("--set", "agent.image.tag=latest"),
 				helm.WithArgs("--set", "debugger.image.tag=latest"),
 				helm.WithArgs("--set", "debugger.enabled=true"),
 				// we need to reduce the timeout to see the wp status controller working properly in e2e tests
-				helm.WithArgs("--set", "operator.wpStatusUpdateInterval=2s"),
+				helm.WithArgs("--set", "controller.wpStatusUpdateInterval=2s"),
 			},
 		},
 	}
@@ -128,7 +128,7 @@ func TestMain(m *testing.M) {
 		commonSetupFuncs = append([]env.Func{
 			envfuncs.CreateCluster(kind.NewProvider(), kindClusterName),
 			envfuncs.LoadImageToCluster(kindClusterName,
-				"ghcr.io/rancher-sandbox/runtime-enforcer/operator:latest",
+				"ghcr.io/rancher-sandbox/runtime-enforcer/controller:latest",
 				"--verbose",
 				"--mode",
 				"direct"),

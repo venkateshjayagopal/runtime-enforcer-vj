@@ -12,11 +12,11 @@ COPY proto/ /src/proto
 COPY internal/ /src/internal
 COPY go.mod go.sum /src/
 COPY Makefile /src/
-RUN make operator
+RUN make controller
 
 FROM scratch
 WORKDIR /
-COPY --from=builder /src/bin/operator /operator
+COPY --from=builder /src/bin/controller /controller
 
 USER 65532:65532
-ENTRYPOINT ["/operator"]
+ENTRYPOINT ["/controller"]

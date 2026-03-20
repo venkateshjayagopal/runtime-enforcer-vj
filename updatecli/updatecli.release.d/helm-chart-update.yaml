@@ -71,14 +71,14 @@ targets:
     spec:
       file: charts/runtime-enforcer/Chart.yaml
       key: $.appVersion
-  update_operator_version:
+  update_controller_version:
     scmid: default
-    name: update Helm chart operator version
+    name: update Helm chart controller version
     kind: yaml
     sourceid: releaseVersion
     spec:
       file: charts/runtime-enforcer/values.yaml
-      key: $.operator.image.tag
+      key: $.controller.image.tag
   update_agent_version:
     scmid: default
     name: update Helm chart agent version
