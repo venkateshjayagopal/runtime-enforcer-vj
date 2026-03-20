@@ -1,6 +1,7 @@
 package bpf
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,6 +9,7 @@ import (
 	"github.com/cilium/ebpf"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/cgroups"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/sys/unix"
 )
 
 func TestUpdateCgTrackerMap(t *testing.T) {
@@ -30,6 +32,17 @@ func TestUpdateCgTrackerMap(t *testing.T) {
 
 	// Create a mock directory with some subfolders
 	tempDir := t.TempDir()
+
+	// name_to_handle_at is not always supported on all machines.
+	// For example in our qemu test VMs we face
+	// `nameToHandle on /tmp/... failed: operation not supported`
+	//
+	// In these cases we just skip the nested-cgroup part of the test.
+	_, err = cgroups.GetCgroupIDFromPath(tempDir)
+	if err != nil && errors.Is(err, unix.EOPNOTSUPP) {
+		t.Skipf("name_to_handle_at not supported on %s, skipping test", tempDir)
+	}
+
 	nestedPath1 := filepath.Join(tempDir, "nested1")
 	nestedPath2 := filepath.Join(tempDir, "nested2")
 	nestedPath3 := filepath.Join(tempDir, "nested3")
