@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 )
 
 const (
@@ -71,7 +72,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 			},
 			expected: []workloadProtectionRow{
 				{
-					Workload: namespacedName(namespaceA, "ubuntu-deployment"),
+					Workload: types.NamespacedName{Namespace: namespaceA, Name: "ubuntu-deployment"}.String(),
 					Kind:     workloadkind.Deployment.String(),
 					Policy:   policyName,
 					Mode:     modeToUpper(policymode.ProtectString),
@@ -96,7 +97,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 			policies: nil,
 			expected: []workloadProtectionRow{
 				{
-					Workload: namespacedName(namespaceA, "ubuntu-deployment"),
+					Workload: types.NamespacedName{Namespace: namespaceA, Name: "ubuntu-deployment"}.String(),
 					Kind:     workloadkind.Deployment.String(),
 					Policy:   policyName,
 					Mode:     unknownMode,
@@ -140,14 +141,14 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 			},
 			expected: []workloadProtectionRow{
 				{
-					Workload: namespacedName(namespaceA, "pod-a"),
+					Workload: types.NamespacedName{Namespace: namespaceA, Name: "pod-a"}.String(),
 					Kind:     workloadkind.Pod.String(),
 					Policy:   policyName,
 					Mode:     modeToUpper(policymode.MonitorString),
 					Status:   string(apiv1alpha1.Active),
 				},
 				{
-					Workload: namespacedName(namespaceB, "pod-b"),
+					Workload: types.NamespacedName{Namespace: namespaceB, Name: "pod-b"}.String(),
 					Kind:     workloadkind.Pod.String(),
 					Policy:   policyName,
 					Mode:     modeToUpper(policymode.ProtectString),

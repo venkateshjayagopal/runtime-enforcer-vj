@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/types"
 	"k8s.io/cli-runtime/pkg/printers"
 	corev1client "k8s.io/client-go/kubernetes/typed/core/v1"
 )
@@ -130,20 +131,17 @@ func collectPolicyProtectionRows(
 	return buildWorkloadProtectionRows(pods.Items, workloadPolicies.Items), nil
 }
 
-func namespacedName(namespace, name string) string { return fmt.Sprintf("%s/%s", namespace, name) }
-
 func buildWorkloadProtectionRows(
 	pods []corev1.Pod,
 	workloadPolicies []apiv1alpha1.WorkloadPolicy,
 ) []workloadProtectionRow {
-	type policyNamespacedName = string
-	// we need to use name+namespace to have a unique key.
-	policyByNamespacedName := make(map[policyNamespacedName]apiv1alpha1.WorkloadPolicy, len(workloadPolicies))
+	// we need to use policy namespace+name to have a unique key.
+	policyByNamespacedName := make(map[types.NamespacedName]apiv1alpha1.WorkloadPolicy, len(workloadPolicies))
 	for _, policy := range workloadPolicies {
-		policyByNamespacedName[policy.NamespacedName()] = policy
+		policyByNamespacedName[types.NamespacedName{Namespace: policy.Namespace, Name: policy.Name}] = policy
 	}
 
-	rowsByKey := map[string]workloadProtectionRow{}
+	rowsByKey := map[types.NamespacedName]workloadProtectionRow{}
 	for _, pod := range pods {
 		policyName := pod.Labels[apiv1alpha1.PolicyLabelKey]
 		// if there is no policy label we don't consider the pod
@@ -152,18 +150,18 @@ func buildWorkloadProtectionRows(
 		}
 
 		workloadName, workloadKind, _ := podworkload.GetTruncatedWorkloadInfo(pod.Name, pod.Labels)
-		workloadNamespacedName := namespacedName(pod.Namespace, workloadName)
+		workloadNamespacedName := types.NamespacedName{Namespace: pod.Namespace, Name: workloadName}
 
 		// Deduplicate the workload name
 		if _, ok := rowsByKey[workloadNamespacedName]; ok {
 			continue
 		}
 
-		policyKey := namespacedName(pod.Namespace, policyName)
+		policyKey := types.NamespacedName{Namespace: pod.Namespace, Name: policyName}
 		policy, exists := policyByNamespacedName[policyKey]
 
 		row := workloadProtectionRow{
-			Workload: workloadNamespacedName,
+			Workload: workloadNamespacedName.String(),
 			Kind:     workloadKind.String(),
 			Policy:   policyName,
 			Mode:     unknownMode,
