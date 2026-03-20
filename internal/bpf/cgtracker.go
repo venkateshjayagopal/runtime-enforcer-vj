@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io/fs"
+	"log/slog"
 	"os"
 	"path/filepath"
 
@@ -15,14 +16,14 @@ import (
 
 func (m *Manager) GetCgroupTrackerUpdateFunc() func(cgID uint64, cgroupPath string) error {
 	return func(cgID uint64, cgroupPath string) error {
-		return m.handleErrOnShutdown(m.updateCgTrackerMap(cgID, cgroupPath))
+		return m.handleErrOnShutdown(updateCgTrackerMap(m.logger, m.objs.CgtrackerMap, cgID, cgroupPath))
 	}
 }
 
-func (m *Manager) updateCgTrackerMap(cgID uint64, cgroupPath string) error {
+func updateCgTrackerMap(logger *slog.Logger, cgTrackerMap *ebpf.Map, cgID uint64, cgroupPath string) error {
 	// we populate the entry for the cgroup id with itself as tracker id so that the child cgroups
 	// can inherit the same tracker id
-	if err := m.objs.CgtrackerMap.Update(&cgID, &cgID, ebpf.UpdateAny); err != nil {
+	if err := cgTrackerMap.Update(&cgID, &cgID, ebpf.UpdateAny); err != nil {
 		return fmt.Errorf("failed to update cgroup tracker map for id %d: %w", cgID, err)
 	}
 
@@ -56,26 +57,26 @@ func (m *Manager) updateCgTrackerMap(cgID uint64, cgroupPath string) error {
 		}
 
 		// the key here is the child cgroup id we just found
-		merr := m.objs.CgtrackerMap.Update(&trackedID, &cgID, ebpf.UpdateAny)
+		merr := cgTrackerMap.Update(&trackedID, &cgID, ebpf.UpdateAny)
 		if merr != nil {
 			walkErr = errors.Join(walkErr, fmt.Errorf("failed to update id (%d) for '%s': %w", trackedID, p, merr))
 		}
 
-		m.logger.Debug("added mapping",
-			"tracked", trackedID,
-			"tracker", cgID,
-			"tracked path", p,
-			"tracker path", cgroupPath)
+		logger.Info("added nested cgroup",
+			"nested ID", trackedID,
+			"parent ID", cgID,
+			"nested path", p,
+			"parent path", cgroupPath)
 
 		return nil
 	})
 	if err != nil {
-		m.logger.Warn("failed to run walkdir", "error", err)
+		logger.Warn("failed to run walkdir", "error", err)
 	}
 
 	// we just log the error here, as the main update operation could be successful even if some child cgroups failed
 	if walkErr != nil {
-		m.logger.Warn("failed to retrieve some the cgroup id for some paths", "cgtracker", true, "error", walkErr)
+		logger.Warn("failed to retrieve some the cgroup id for some paths", "cgtracker", true, "error", walkErr)
 	}
 	return nil
 }
