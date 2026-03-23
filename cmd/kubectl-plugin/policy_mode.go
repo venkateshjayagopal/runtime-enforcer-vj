@@ -11,6 +11,7 @@ import (
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	cmdutil "k8s.io/kubectl/pkg/cmd/util"
+	"k8s.io/kubectl/pkg/util/completion"
 )
 
 type policyModeOptions struct {
@@ -20,7 +21,7 @@ type policyModeOptions struct {
 	Mode       string
 }
 
-func newPolicyModeCmd(_ cmdutil.Factory, mode string) *cobra.Command {
+func newPolicyModeCmd(f cmdutil.Factory, mode string) *cobra.Command {
 	use := fmt.Sprintf("%s POLICY_NAME", mode)
 	short := fmt.Sprintf("Set WorkloadPolicy mode to %s", mode)
 
@@ -34,6 +35,18 @@ func newPolicyModeCmd(_ cmdutil.Factory, mode string) *cobra.Command {
 		Short: short,
 		Args:  cobra.ExactArgs(1),
 		RunE:  runPolicyModeSetCmd(opts),
+		ValidArgsFunction: func(_ *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
+			switch len(args) {
+			case 0:
+				return completion.CompGetResource(
+					f,
+					"workloadpolicies",
+					toComplete,
+				), cobra.ShellCompDirectiveNoFileComp
+			default:
+				return nil, cobra.ShellCompDirectiveNoFileComp
+			}
+		},
 	}
 
 	cmd.SetUsageTemplate(subcommandUsageTemplate)
