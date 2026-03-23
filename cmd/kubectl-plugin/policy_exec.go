@@ -11,6 +11,7 @@ import (
 	"github.com/spf13/cobra"
 	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	cmdutil "k8s.io/kubectl/pkg/cmd/util"
 	"k8s.io/kubectl/pkg/util/completion"
 )
 
@@ -42,20 +43,26 @@ func newPolicyExecCmd(deps commonCmdDeps, action policyExecAction) *cobra.Comman
 		Action: action,
 	}
 
+	const (
+		positionPolicyName      = 0
+		positionContainerName   = 1
+		positionFirstExecutable = 2
+	)
+
 	cmd := &cobra.Command{
 		Use:   use,
 		Short: short,
 		Args:  cobra.MinimumNArgs(minPolicyExecArgs),
 		RunE:  runPolicyExecCmd(opts),
 		ValidArgsFunction: func(_ *cobra.Command, args []string, toComplete string) ([]cobra.Completion, cobra.ShellCompDirective) {
-			switch len(args) {
-			case 0:
+			switch {
+			case len(args) == positionPolicyName:
 				return completion.CompGetResource(
 					deps.f,
 					"workloadpolicies",
 					toComplete,
 				), cobra.ShellCompDirectiveNoFileComp
-			case 1:
+			case len(args) == positionContainerName:
 				template := "{{ range $key, $value := .spec.rulesByContainer }}{{ $key }} {{end}}"
 				return completion.CompGetFromTemplate(
 					&template,
@@ -64,6 +71,38 @@ func newPolicyExecCmd(deps commonCmdDeps, action policyExecAction) *cobra.Comman
 					[]string{"workloadpolicies", args[0]},
 					toComplete,
 				), cobra.ShellCompDirectiveNoFileComp
+			case len(args) >= positionFirstExecutable:
+				switch action {
+				case policyExecActionAllow:
+					template := fmt.Sprintf(
+						"{{ range $key, $value := index .status.violations }}{{ if eq $value.containerName \"%s\" }}{{ $value.executablePath }} {{end}}{{end}}",
+						args[1],
+					)
+					execs := completion.CompGetFromTemplate(
+						&template,
+						deps.f,
+						"",
+						[]string{"workloadpolicies", args[0]},
+						toComplete,
+					)
+					execs = cmdutil.Difference(execs, args[2:])
+					return execs, cobra.ShellCompDirectiveNoFileComp
+				case policyExecActionDeny:
+					template := fmt.Sprintf(
+						"{{ $ruleByContainer := index .spec.rulesByContainer \"%s\" }}{{ range $key, $value := $ruleByContainer.executables.allowed }}{{ $value }} {{end}}",
+						args[1],
+					)
+					execs := completion.CompGetFromTemplate(
+						&template,
+						deps.f,
+						"",
+						[]string{"workloadpolicies", args[0]},
+						toComplete,
+					)
+					return execs, cobra.ShellCompDirectiveNoFileComp
+				default:
+					return nil, cobra.ShellCompDirectiveNoFileComp
+				}
 			default:
 				return nil, cobra.ShellCompDirectiveNoFileComp
 			}
