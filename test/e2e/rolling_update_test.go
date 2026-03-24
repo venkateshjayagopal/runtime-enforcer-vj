@@ -20,19 +20,14 @@ import (
 
 // This test verifies the protection is persistent during rolling update of agent.
 func getRollingUpdateTest() types.Feature {
-	workloadNamespace := envconf.RandomName("workload-namespace", 32)
-
 	return features.New("Rolling update").
 		Setup(SetupSharedK8sClient).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			policy := &v1alpha1.WorkloadPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-policy",
-					Namespace: workloadNamespace,
+					Namespace: getNamespace(ctx),
 				},
 				Spec: v1alpha1.WorkloadPolicySpec{
 					Mode: "protect",
@@ -53,7 +48,7 @@ func getRollingUpdateTest() types.Feature {
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, workloadNamespace, withPolicy("test-policy"),
+			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx), withPolicy("test-policy"),
 				decoder.MutateOption(func(obj k8s.Object) error {
 					deployment := obj.(*appsv1.Deployment)
 					deployment.Spec.Template.Spec.Containers[0].Command = []string{
@@ -69,13 +64,14 @@ func getRollingUpdateTest() types.Feature {
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := ctx.Value(key("client")).(*resources.Resources)
 
-				podName, err := findPodByPrefix(ctx, workloadNamespace, "ubuntu-deployment")
+				namespace := getNamespace(ctx)
+				podName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
 
 				// Run mkdir to verify that it is blocked.
-				err = r.ExecInPod(ctx, workloadNamespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
+				err = r.ExecInPod(ctx, namespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
 				require.Error(t, err)
 				require.Empty(t, stdout.String())
 				require.Contains(t, stderr.String(), "operation not permitted\n")
@@ -83,7 +79,7 @@ func getRollingUpdateTest() types.Feature {
 				// Verify that the test directory doesn't exist.
 				err = r.ExecInPod(
 					ctx,
-					workloadNamespace,
+					namespace,
 					podName,
 					"ubuntu",
 					[]string{"ls", "/tmp/testdir"},
@@ -123,15 +119,16 @@ func getRollingUpdateTest() types.Feature {
 		}).
 		Assess("/tmp/testdir should never be created", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			r := ctx.Value(key("client")).(*resources.Resources)
+			namespace := getNamespace(ctx)
 
-			podName, err := findPodByPrefix(ctx, workloadNamespace, "ubuntu-deployment")
+			podName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
 			require.NoError(t, err)
 
 			var stdout, stderr bytes.Buffer
 
 			err = r.ExecInPod(
 				ctx,
-				workloadNamespace,
+				namespace,
 				podName,
 				"ubuntu",
 				[]string{"ls", "/tmp/testdir"},
@@ -144,7 +141,7 @@ func getRollingUpdateTest() types.Feature {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, workloadNamespace)
+			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
 			return ctx
 		}).Feature()
 }

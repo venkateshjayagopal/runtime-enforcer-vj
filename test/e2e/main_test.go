@@ -21,16 +21,11 @@ import (
 )
 
 func getMainTest() types.Feature {
-	workloadNamespace := envconf.RandomName("main-namespace", 32)
-
 	return features.New("Main").
 		Setup(SetupSharedK8sClient).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, workloadNamespace)
+			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx))
 			return ctx
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
@@ -41,7 +36,7 @@ func getMainTest() types.Feature {
 				proposal := v1alpha1.WorkloadPolicyProposal{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "deploy-ubuntu-deployment",
-						Namespace: workloadNamespace, // to be consistent with test data.
+						Namespace: getNamespace(ctx),
 					},
 				}
 				err := wait.For(conditions.New(r).ResourceMatch(
@@ -70,7 +65,7 @@ func getMainTest() types.Feature {
 				proposal := v1alpha1.WorkloadPolicyProposal{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      id,
-						Namespace: workloadNamespace, // to be consistent with test data.
+						Namespace: getNamespace(ctx),
 					},
 				}
 
@@ -116,25 +111,26 @@ func getMainTest() types.Feature {
 			}).
 		Assess("update the workload to apply policy",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
+				testNamespace := getNamespace(ctx)
 				// Delete the ubuntu deployment
-				deleteUbuntuDeployment(ctx, t, workloadNamespace)
+				deleteUbuntuDeployment(ctx, t, testNamespace)
 
 				// Create the ubuntu deployment again with policy label assigned.
-				createAndWaitUbuntuDeployment(ctx, t, workloadNamespace, withPolicy("test-policy"))
+				createAndWaitUbuntuDeployment(ctx, t, testNamespace, withPolicy("test-policy"))
 				return ctx
 			}).
 		Assess("pod exec will be blocked",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := ctx.Value(key("client")).(*resources.Resources)
-
-				podName, err := findPodByPrefix(ctx, workloadNamespace, "ubuntu-deployment", func(pod corev1.Pod) bool {
+				testNamespace := getNamespace(ctx)
+				podName, err := findPodByPrefix(ctx, testNamespace, "ubuntu-deployment", func(pod corev1.Pod) bool {
 					return pod.Labels[v1alpha1.PolicyLabelKey] == "test-policy"
 				})
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
 
-				err = r.ExecInPod(ctx, workloadNamespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
+				err = r.ExecInPod(ctx, testNamespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
 				require.Error(t, err)
 				require.Empty(t, stdout.String())
 				require.Equal(t, "exec /usr/bin/mkdir: operation not permitted\n", stderr.String())
@@ -147,7 +143,7 @@ func getMainTest() types.Feature {
 				policy := &v1alpha1.WorkloadPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-policy",
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 					},
 				}
 
@@ -175,7 +171,7 @@ func getMainTest() types.Feature {
 				nonReferencedPolicy := v1alpha1.WorkloadPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      nonReferencedPolicyName,
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 					},
 					Spec: v1alpha1.WorkloadPolicySpec{
 						Mode: "monitor",
@@ -222,7 +218,7 @@ func getMainTest() types.Feature {
 				referencedPolicy := v1alpha1.WorkloadPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      referencedPolicyName,
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 					},
 					Spec: v1alpha1.WorkloadPolicySpec{
 						Mode: "monitor",
@@ -244,7 +240,7 @@ func getMainTest() types.Feature {
 				pod := corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      podName,
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 						Labels: map[string]string{
 							v1alpha1.PolicyLabelKey: referencedPolicyName,
 						},
@@ -324,7 +320,7 @@ func getMainTest() types.Feature {
 				return ctx
 			}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, workloadNamespace)
+			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
 			return ctx
 		}).Feature()
 }

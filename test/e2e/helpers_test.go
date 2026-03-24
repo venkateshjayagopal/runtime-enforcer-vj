@@ -82,11 +82,13 @@ func getNamespace(ctx context.Context) string {
 	return ctx.Value(key("namespace")).(string)
 }
 
-func createTestNamespace(ctx context.Context, t *testing.T, namespace string) {
+func SetupTestNamespace(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 	t.Helper()
-	t.Logf("creating test namespace: %q", namespace)
-	err := getResources(ctx).Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: namespace}})
-	require.NoError(t, err, "failed to create test namespace %q", namespace)
+	testNamespace := envconf.RandomName(runtimeEnforcerE2EPrefix, 32)
+	t.Logf("creating test namespace: %q", testNamespace)
+	err := getResources(ctx).Create(ctx, &corev1.Namespace{ObjectMeta: metav1.ObjectMeta{Name: testNamespace}})
+	require.NoError(t, err, "failed to create test namespace %q", testNamespace)
+	return context.WithValue(ctx, key("namespace"), testNamespace)
 }
 
 ////////////////////

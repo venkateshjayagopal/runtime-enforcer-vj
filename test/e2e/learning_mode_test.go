@@ -25,14 +25,9 @@ import (
 )
 
 func getLearningModeTest() types.Feature {
-	workloadNamespace := envconf.RandomName("learning-namespace", 32)
-
 	return features.New("LearningMode").
 		Setup(SetupSharedK8sClient).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			t.Log("installing test resources")
 
@@ -44,7 +39,7 @@ func getLearningModeTest() types.Feature {
 				"./testdata",
 				"*",
 				[]resources.CreateOption{},
-				decoder.MutateNamespace(workloadNamespace),
+				decoder.MutateNamespace(getNamespace(ctx)),
 			)
 			assert.NoError(t, err, "failed to apply test data")
 
@@ -112,7 +107,7 @@ func getLearningModeTest() types.Feature {
 					proposal := v1alpha1.WorkloadPolicyProposal{
 						ObjectMeta: metav1.ObjectMeta{
 							Name:      proposalName,
-							Namespace: workloadNamespace, // to be consistent with test data.
+							Namespace: getNamespace(ctx), // to be consistent with test data.
 						},
 					}
 					err = wait.For(conditions.New(r).ResourceMatch(
@@ -164,7 +159,7 @@ func getLearningModeTest() types.Feature {
 				[]resources.DeleteOption{
 					resources.WithDeletePropagation("Foreground"),
 				},
-				decoder.MutateNamespace(workloadNamespace),
+				decoder.MutateNamespace(getNamespace(ctx)),
 			)
 			assert.NoError(t, err, "failed to delete test data")
 

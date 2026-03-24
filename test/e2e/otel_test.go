@@ -33,18 +33,12 @@ import (
 func getOtelCollectorTest() types.Feature {
 	return features.New("OTEL Collector Violation Metrics").
 		Setup(SetupSharedK8sClient).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			workloadNamespace := envconf.RandomName("otel-namespace", 32)
-			createTestNamespace(ctx, t, workloadNamespace)
-			return context.WithValue(ctx, key("namespace"), workloadNamespace)
-		}).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			namespace := ctx.Value(key("namespace")).(string)
-
 			policy := &v1alpha1.WorkloadPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      "test-policy",
-					Namespace: namespace,
+					Namespace: getNamespace(ctx),
 				},
 				Spec: v1alpha1.WorkloadPolicySpec{
 					Mode: "monitor",
@@ -66,7 +60,7 @@ func getOtelCollectorTest() types.Feature {
 			return context.WithValue(ctx, key("policy"), policy.DeepCopy())
 		}).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			namespace := ctx.Value(key("namespace")).(string)
+			namespace := getNamespace(ctx)
 			createAndWaitUbuntuDeployment(ctx, t, namespace, withPolicy("test-policy"))
 			ubuntuPodName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
 			require.NoError(t, err)
@@ -92,7 +86,7 @@ func getOtelCollectorTest() types.Feature {
 			}).
 		Assess("violations produce Prometheus metrics on the collector",
 			func(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
-				namespace := ctx.Value(key("namespace")).(string)
+				namespace := getNamespace(ctx)
 				expectedPodName := ctx.Value(key("targetPodName")).(string)
 				r := ctx.Value(key("client")).(*resources.Resources)
 
@@ -171,7 +165,7 @@ func getOtelCollectorTest() types.Feature {
 				return ctx
 			}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			namespace := ctx.Value(key("namespace")).(string)
+			namespace := getNamespace(ctx)
 			deleteUbuntuDeployment(ctx, t, namespace)
 
 			policy := ctx.Value(key("policy")).(*v1alpha1.WorkloadPolicy)

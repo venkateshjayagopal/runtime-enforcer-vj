@@ -20,22 +20,18 @@ import (
 )
 
 func getPolicyPerContainerTest() types.Feature {
-	workloadNamespace := envconf.RandomName("policy-per-container-ns", 32)
 	policyName := "per-container-policy"
 	podNameAllowed := "test-pod-allowed-init-main"
 	podNameBlocked := "test-pod-blocked-init-main"
 
 	return features.New("policy per container").
 		Setup(SetupSharedK8sClient).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			policy := v1alpha1.WorkloadPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      policyName,
-					Namespace: workloadNamespace,
+					Namespace: getNamespace(ctx),
 				},
 				Spec: v1alpha1.WorkloadPolicySpec{
 					Mode: "protect",
@@ -71,7 +67,7 @@ func getPolicyPerContainerTest() types.Feature {
 				pod := corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      podNameAllowed,
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 						Labels: map[string]string{
 							v1alpha1.PolicyLabelKey: policyName,
 						},
@@ -104,7 +100,7 @@ func getPolicyPerContainerTest() types.Feature {
 				)
 				require.NoError(t, err, "pod did not become ready")
 
-				err = r.Get(ctx, podNameAllowed, workloadNamespace, &pod)
+				err = r.Get(ctx, podNameAllowed, getNamespace(ctx), &pod)
 				require.NoError(t, err, "failed to get pod")
 
 				// Verify init container completed successfully (echo is allowed)
@@ -133,7 +129,7 @@ func getPolicyPerContainerTest() types.Feature {
 				blockedPod := corev1.Pod{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      podNameBlocked,
-						Namespace: workloadNamespace,
+						Namespace: getNamespace(ctx),
 						Labels: map[string]string{
 							v1alpha1.PolicyLabelKey: policyName,
 						},
@@ -201,7 +197,7 @@ func getPolicyPerContainerTest() types.Feature {
 
 				err := r.ExecInPod(
 					ctx,
-					workloadNamespace,
+					getNamespace(ctx),
 					podNameAllowed,
 					"main-container",
 					[]string{"ls", "/"},
@@ -224,7 +220,7 @@ func getPolicyPerContainerTest() types.Feature {
 
 				err := r.ExecInPod(
 					ctx,
-					workloadNamespace,
+					getNamespace(ctx),
 					podNameAllowed,
 					"main-container",
 					[]string{"bash", "-c", "echo 'bash should be blocked'"},
@@ -247,7 +243,7 @@ func getPolicyPerContainerTest() types.Feature {
 			pod := corev1.Pod{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      podNameAllowed,
-					Namespace: workloadNamespace,
+					Namespace: getNamespace(ctx),
 				},
 			}
 			err := r.Delete(ctx, &pod)
@@ -262,7 +258,7 @@ func getPolicyPerContainerTest() types.Feature {
 			policy := v1alpha1.WorkloadPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      policyName,
-					Namespace: workloadNamespace,
+					Namespace: getNamespace(ctx),
 				},
 			}
 			err = r.Delete(ctx, &policy)

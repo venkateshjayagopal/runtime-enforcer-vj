@@ -24,20 +24,14 @@ const (
 )
 
 func getPolicyUpdateTest() types.Feature {
-	workloadNamespace := envconf.RandomName("policy-update-ns", 32)
-
 	return features.New("policy-update").
 		Setup(SetupSharedK8sClient).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return context.WithValue(ctx, key("namespace"), workloadNamespace)
-		}).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			namespace := getNamespace(ctx)
 			policy := v1alpha1.WorkloadPolicy{
 				ObjectMeta: metav1.ObjectMeta{
 					Name:      policyName,
-					Namespace: namespace,
+					Namespace: getNamespace(ctx),
 				},
 				Spec: v1alpha1.WorkloadPolicySpec{
 					Mode: "protect",

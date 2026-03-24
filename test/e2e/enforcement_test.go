@@ -15,23 +15,18 @@ import (
 )
 
 func getEnforcementOnNewPodsTest() types.Feature {
-	workloadNamespace := envconf.RandomName("enforce-namespace", 32)
-
 	return features.New("enforcement on new pods").
 		Setup(SetupSharedK8sClient).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
+		Setup(SetupTestNamespace).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
 		Assess("a namespace-scoped policy can be enforced correctly",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := ctx.Value(key("client")).(*resources.Resources)
-
+				testNamespace := getNamespace(ctx)
 				policy := v1alpha1.WorkloadPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-policy",
-						Namespace: workloadNamespace,
+						Namespace: testNamespace,
 					},
 					Spec: v1alpha1.WorkloadPolicySpec{
 						Mode: "protect",
@@ -52,10 +47,10 @@ func getEnforcementOnNewPodsTest() types.Feature {
 				// 1. Create the resource and wait for it to be deployed.
 				createAndWaitWP(ctx, t, policy.DeepCopy())
 				// 2. Deploy test pods
-				createAndWaitUbuntuDeployment(ctx, t, workloadNamespace, withPolicy("test-policy"))
+				createAndWaitUbuntuDeployment(ctx, t, testNamespace, withPolicy("test-policy"))
 
 				// 3. Run command in the pod and verify the result.
-				podName, err := findPodByPrefix(ctx, workloadNamespace, "ubuntu-deployment")
+				podName, err := findPodByPrefix(ctx, testNamespace, "ubuntu-deployment")
 				require.NoError(t, err)
 
 				expectedResults := []struct {
@@ -78,7 +73,7 @@ func getEnforcementOnNewPodsTest() types.Feature {
 					t.Log("running:", expectedResult.Commands)
 					err = r.ExecInPod(
 						ctx,
-						workloadNamespace,
+						testNamespace,
 						podName,
 						"ubuntu",
 						expectedResult.Commands,
@@ -96,7 +91,7 @@ func getEnforcementOnNewPodsTest() types.Feature {
 				}
 
 				// 4. Delete test Deployment
-				deleteUbuntuDeployment(ctx, t, workloadNamespace)
+				deleteUbuntuDeployment(ctx, t, testNamespace)
 
 				// 5. Delete WorkloadPolicy and wait for it to be gone.
 				deleteAndWaitWP(ctx, t, &policy)

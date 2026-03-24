@@ -18,16 +18,11 @@ import (
 )
 
 func getPromotionTest() types.Feature {
-	workloadNamespace := envconf.RandomName("main-namespace", 32)
-
 	return features.New("Promotion").
 		Setup(SetupSharedK8sClient).
+		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createTestNamespace(ctx, t, workloadNamespace)
-			return ctx
-		}).
-		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, workloadNamespace)
+			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx))
 			return ctx
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
@@ -38,7 +33,7 @@ func getPromotionTest() types.Feature {
 				proposal := v1alpha1.WorkloadPolicyProposal{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "deploy-ubuntu-deployment",
-						Namespace: workloadNamespace, // to be consistent with test data.
+						Namespace: getNamespace(ctx),
 					},
 				}
 				err := wait.For(conditions.New(r).ResourceMatch(
@@ -67,7 +62,7 @@ func getPromotionTest() types.Feature {
 				proposal := v1alpha1.WorkloadPolicyProposal{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      id,
-						Namespace: workloadNamespace, // to be consistent with test data.
+						Namespace: getNamespace(ctx),
 					},
 				}
 
@@ -143,12 +138,12 @@ func getPromotionTest() types.Feature {
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := ctx.Value(key("client")).(*resources.Resources)
 
-				podName, err := findPodByPrefix(ctx, workloadNamespace, "ubuntu-deployment")
+				podName, err := findPodByPrefix(ctx, getNamespace(ctx), "ubuntu-deployment")
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
 
-				err = r.ExecInPod(ctx, workloadNamespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
+				err = r.ExecInPod(ctx, getNamespace(ctx), podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
 				require.Error(t, err)
 				require.Empty(t, stdout.String())
 				require.Equal(t, "mkdir: missing operand\nTry 'mkdir --help' for more information.\n", stderr.String())
@@ -169,7 +164,7 @@ func getPromotionTest() types.Feature {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, workloadNamespace)
+			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
 			return ctx
 		}).Feature()
 }
