@@ -49,7 +49,7 @@ func getMonitoringTest() types.Feature {
 		}).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			namespace := getNamespace(ctx)
-			createAndWaitUbuntuDeployment(ctx, t, namespace, withPolicy("test-policy"))
+			createAndWaitUbuntuDeployment(ctx, t, withPolicy("test-policy"))
 			ubuntuPodName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
 			require.NoError(t, err)
 			require.NotEmpty(t, ubuntuPodName)
@@ -119,9 +119,7 @@ func getMonitoringTest() types.Feature {
 				return ctx
 			}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			namespace := getNamespace(ctx)
-			deleteUbuntuDeployment(ctx, t, namespace)
-
+			deleteUbuntuDeployment(ctx, t)
 			policy := ctx.Value(key("policy")).(*v1alpha1.WorkloadPolicy)
 			deleteAndWaitWP(ctx, t, policy)
 			return ctx

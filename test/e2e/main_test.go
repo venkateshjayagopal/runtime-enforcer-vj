@@ -24,7 +24,7 @@ func getMainTest() types.Feature {
 		Setup(SetupSharedK8sClient).
 		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx))
+			createAndWaitUbuntuDeployment(ctx, t)
 			return ctx
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
@@ -110,26 +110,24 @@ func getMainTest() types.Feature {
 			}).
 		Assess("update the workload to apply policy",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-				testNamespace := getNamespace(ctx)
 				// Delete the ubuntu deployment
-				deleteUbuntuDeployment(ctx, t, testNamespace)
+				deleteUbuntuDeployment(ctx, t)
 
 				// Create the ubuntu deployment again with policy label assigned.
-				createAndWaitUbuntuDeployment(ctx, t, testNamespace, withPolicy("test-policy"))
+				createAndWaitUbuntuDeployment(ctx, t, withPolicy("test-policy"))
 				return ctx
 			}).
 		Assess("pod exec will be blocked",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := getClient(ctx)
-				testNamespace := getNamespace(ctx)
-				podName, err := findPodByPrefix(ctx, testNamespace, "ubuntu-deployment", func(pod corev1.Pod) bool {
+				podName, err := findUbuntuDeploymentPod(ctx, func(pod corev1.Pod) bool {
 					return pod.Labels[v1alpha1.PolicyLabelKey] == "test-policy"
 				})
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
 
-				err = r.ExecInPod(ctx, testNamespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
+				err = r.ExecInPod(ctx, getNamespace(ctx), podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
 				require.Error(t, err)
 				require.Empty(t, stdout.String())
 				require.Equal(t, "exec /usr/bin/mkdir: operation not permitted\n", stderr.String())
@@ -319,7 +317,7 @@ func getMainTest() types.Feature {
 				return ctx
 			}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
+			deleteUbuntuDeployment(ctx, t)
 			return ctx
 		}).Feature()
 }

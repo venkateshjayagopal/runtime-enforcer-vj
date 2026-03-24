@@ -21,11 +21,10 @@ func getEnforcementOnNewPodsTest() types.Feature {
 		Assess("a namespace-scoped policy can be enforced correctly",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := getClient(ctx)
-				testNamespace := getNamespace(ctx)
 				policy := v1alpha1.WorkloadPolicy{
 					ObjectMeta: metav1.ObjectMeta{
 						Name:      "test-policy",
-						Namespace: testNamespace,
+						Namespace: getNamespace(ctx),
 					},
 					Spec: v1alpha1.WorkloadPolicySpec{
 						Mode: "protect",
@@ -46,10 +45,10 @@ func getEnforcementOnNewPodsTest() types.Feature {
 				// 1. Create the resource and wait for it to be deployed.
 				createAndWaitWP(ctx, t, policy.DeepCopy())
 				// 2. Deploy test pods
-				createAndWaitUbuntuDeployment(ctx, t, testNamespace, withPolicy("test-policy"))
+				createAndWaitUbuntuDeployment(ctx, t, withPolicy("test-policy"))
 
 				// 3. Run command in the pod and verify the result.
-				podName, err := findPodByPrefix(ctx, testNamespace, "ubuntu-deployment")
+				podName, err := findUbuntuDeploymentPod(ctx)
 				require.NoError(t, err)
 
 				expectedResults := []struct {
@@ -72,7 +71,7 @@ func getEnforcementOnNewPodsTest() types.Feature {
 					t.Log("running:", expectedResult.Commands)
 					err = r.ExecInPod(
 						ctx,
-						testNamespace,
+						getNamespace(ctx),
 						podName,
 						"ubuntu",
 						expectedResult.Commands,
@@ -90,7 +89,7 @@ func getEnforcementOnNewPodsTest() types.Feature {
 				}
 
 				// 4. Delete test Deployment
-				deleteUbuntuDeployment(ctx, t, testNamespace)
+				deleteUbuntuDeployment(ctx, t)
 
 				// 5. Delete WorkloadPolicy and wait for it to be gone.
 				deleteAndWaitWP(ctx, t, &policy)

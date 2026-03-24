@@ -160,11 +160,11 @@ func withPolicy(policyName string) decoder.DecodeOption {
 func createAndWaitUbuntuDeployment(
 	ctx context.Context,
 	t *testing.T,
-	namespace string,
 	options ...decoder.DecodeOption,
 ) {
 	t.Helper()
 	t.Log("installing test Ubuntu deployment")
+	namespace := getNamespace(ctx)
 	decodeOptions := append([]decoder.DecodeOption{decoder.MutateNamespace(namespace)}, options...)
 	err := decoder.ApplyWithManifestDir(
 		ctx,
@@ -184,7 +184,7 @@ func createAndWaitUbuntuDeployment(
 	require.NoError(t, err, "ubuntu deployment should become available")
 }
 
-func deleteUbuntuDeployment(ctx context.Context, t *testing.T, namespace string) {
+func deleteUbuntuDeployment(ctx context.Context, t *testing.T) {
 	t.Helper()
 	t.Log("deleting test Ubuntu deployment")
 	err := decoder.DeleteWithManifestDir(
@@ -193,7 +193,7 @@ func deleteUbuntuDeployment(ctx context.Context, t *testing.T, namespace string)
 		testFolder,
 		ubuntuDeploymentManifest,
 		[]resources.DeleteOption{},
-		decoder.MutateNamespace(namespace),
+		decoder.MutateNamespace(getNamespace(ctx)),
 	)
 	require.NoError(t, err, "failed to delete test data")
 }
@@ -225,6 +225,10 @@ func findPodByPrefix(ctx context.Context, namespace string, prefix string, match
 	}
 
 	return "", fmt.Errorf("pod with prefix %q not found in namespace %q", prefix, namespace)
+}
+
+func findUbuntuDeploymentPod(ctx context.Context, matches ...podMatcher) (string, error) {
+	return findPodByPrefix(ctx, getNamespace(ctx), "ubuntu-deployment", matches...)
 }
 
 func execInCurrentNamespace(

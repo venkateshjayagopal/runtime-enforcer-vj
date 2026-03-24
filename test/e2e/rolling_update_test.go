@@ -47,7 +47,7 @@ func getRollingUpdateTest() types.Feature {
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx), withPolicy("test-policy"),
+			createAndWaitUbuntuDeployment(ctx, t, withPolicy("test-policy"),
 				decoder.MutateOption(func(obj k8s.Object) error {
 					deployment := obj.(*appsv1.Deployment)
 					deployment.Spec.Template.Spec.Containers[0].Command = []string{
@@ -63,14 +63,13 @@ func getRollingUpdateTest() types.Feature {
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := getClient(ctx)
 
-				namespace := getNamespace(ctx)
-				podName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
+				podName, err := findUbuntuDeploymentPod(ctx)
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
 
 				// Run mkdir to verify that it is blocked.
-				err = r.ExecInPod(ctx, namespace, podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
+				err = r.ExecInPod(ctx, getNamespace(ctx), podName, "ubuntu", []string{"mkdir"}, &stdout, &stderr)
 				require.Error(t, err)
 				require.Empty(t, stdout.String())
 				require.Contains(t, stderr.String(), "operation not permitted\n")
@@ -78,7 +77,7 @@ func getRollingUpdateTest() types.Feature {
 				// Verify that the test directory doesn't exist.
 				err = r.ExecInPod(
 					ctx,
-					namespace,
+					getNamespace(ctx),
 					podName,
 					"ubuntu",
 					[]string{"ls", "/tmp/testdir"},
@@ -118,16 +117,15 @@ func getRollingUpdateTest() types.Feature {
 		}).
 		Assess("/tmp/testdir should never be created", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			r := getClient(ctx)
-			namespace := getNamespace(ctx)
 
-			podName, err := findPodByPrefix(ctx, namespace, "ubuntu-deployment")
+			podName, err := findUbuntuDeploymentPod(ctx)
 			require.NoError(t, err)
 
 			var stdout, stderr bytes.Buffer
 
 			err = r.ExecInPod(
 				ctx,
-				namespace,
+				getNamespace(ctx),
 				podName,
 				"ubuntu",
 				[]string{"ls", "/tmp/testdir"},
@@ -140,7 +138,7 @@ func getRollingUpdateTest() types.Feature {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
+			deleteUbuntuDeployment(ctx, t)
 			return ctx
 		}).Feature()
 }

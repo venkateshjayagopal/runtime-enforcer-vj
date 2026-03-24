@@ -21,7 +21,7 @@ func getPromotionTest() types.Feature {
 		Setup(SetupSharedK8sClient).
 		Setup(SetupTestNamespace).
 		Setup(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			createAndWaitUbuntuDeployment(ctx, t, getNamespace(ctx))
+			createAndWaitUbuntuDeployment(ctx, t)
 			return ctx
 		}).
 		Assess("required resources become available", IfRequiredResourcesAreCreated).
@@ -137,7 +137,7 @@ func getPromotionTest() types.Feature {
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				r := getClient(ctx)
 
-				podName, err := findPodByPrefix(ctx, getNamespace(ctx), "ubuntu-deployment")
+				podName, err := findUbuntuDeploymentPod(ctx)
 				require.NoError(t, err)
 
 				var stdout, stderr bytes.Buffer
@@ -163,7 +163,7 @@ func getPromotionTest() types.Feature {
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-			deleteUbuntuDeployment(ctx, t, getNamespace(ctx))
+			deleteUbuntuDeployment(ctx, t)
 			return ctx
 		}).Feature()
 }
