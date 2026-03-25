@@ -32,7 +32,6 @@ const (
 	operationNotPermittedMsg = "operation not permitted"
 )
 
-type podMatcher func(corev1.Pod) bool
 type key string
 
 func SetupSharedK8sClient(ctx context.Context, t *testing.T, config *envconf.Config) context.Context {
@@ -187,18 +186,38 @@ func createAndWaitUbuntuDeployment(
 func deleteUbuntuDeployment(ctx context.Context, t *testing.T) {
 	t.Helper()
 	t.Log("deleting test Ubuntu deployment")
+	// With foreground cascading deletion the Deployment resource is only removed
+	// once all its owned pods have been terminated, so a single wait on the deployment is enough.
 	err := decoder.DeleteWithManifestDir(
 		ctx,
 		getClient(ctx),
 		testFolder,
 		ubuntuDeploymentManifest,
-		[]resources.DeleteOption{},
+		[]resources.DeleteOption{
+			resources.WithDeletePropagation("Foreground"),
+		},
 		decoder.MutateNamespace(getNamespace(ctx)),
 	)
 	require.NoError(t, err, "failed to delete test data")
 }
 
-func findPodByPrefix(ctx context.Context, namespace string, prefix string, matches ...podMatcher) (string, error) {
+func waitForUbuntuDeploymentDeleted(ctx context.Context, t *testing.T) {
+	t.Helper()
+	t.Log("waiting for Ubuntu deployment to be deleted")
+	deployment := &appsv1.Deployment{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      ubuntuDeploymentName,
+			Namespace: getNamespace(ctx),
+		},
+	}
+	err := wait.For(
+		conditions.New(getClient(ctx)).ResourceDeleted(deployment),
+		wait.WithTimeout(defaultOperationTimeout),
+	)
+	require.NoError(t, err, "ubuntu deployment should be deleted")
+}
+
+func findPodByPrefix(ctx context.Context, namespace string, prefix string) (string, error) {
 	var pods corev1.PodList
 
 	err := getClient(ctx).WithNamespace(namespace).List(ctx, &pods)
@@ -207,19 +226,7 @@ func findPodByPrefix(ctx context.Context, namespace string, prefix string, match
 	}
 
 	for _, pod := range pods.Items {
-		if !strings.HasPrefix(pod.Name, prefix) {
-			continue
-		}
-
-		matched := true
-		for _, match := range matches {
-			if match != nil && !match(pod) {
-				matched = false
-				break
-			}
-		}
-
-		if matched {
+		if strings.HasPrefix(pod.Name, prefix) {
 			return pod.Name, nil
 		}
 	}
@@ -227,8 +234,8 @@ func findPodByPrefix(ctx context.Context, namespace string, prefix string, match
 	return "", fmt.Errorf("pod with prefix %q not found in namespace %q", prefix, namespace)
 }
 
-func findUbuntuDeploymentPod(ctx context.Context, matches ...podMatcher) (string, error) {
-	return findPodByPrefix(ctx, getNamespace(ctx), "ubuntu-deployment", matches...)
+func findUbuntuDeploymentPod(ctx context.Context) (string, error) {
+	return findPodByPrefix(ctx, getNamespace(ctx), ubuntuDeploymentName)
 }
 
 func execInCurrentNamespace(

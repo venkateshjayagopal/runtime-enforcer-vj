@@ -113,15 +113,16 @@ func getMainTest() types.Feature {
 				// Delete the ubuntu deployment
 				deleteUbuntuDeployment(ctx, t)
 
+				// Wait for the ubuntu deployment to be deleted
+				waitForUbuntuDeploymentDeleted(ctx, t)
+
 				// Create the ubuntu deployment again with policy label assigned.
 				createAndWaitUbuntuDeployment(ctx, t, withPolicy("test-policy"))
 				return ctx
 			}).
 		Assess("pod exec will be blocked",
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
-				podName, err := findUbuntuDeploymentPod(ctx, func(pod corev1.Pod) bool {
-					return pod.Labels[v1alpha1.PolicyLabelKey] == "test-policy"
-				})
+				podName, err := findUbuntuDeploymentPod(ctx)
 				require.NoError(t, err)
 				requireExecBlockedInCurrentNamespace(ctx, t, podName, "ubuntu", []string{"mkdir"})
 				return ctx
