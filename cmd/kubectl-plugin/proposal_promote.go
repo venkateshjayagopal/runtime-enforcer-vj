@@ -92,20 +92,6 @@ func runProposalPromote(
 
 	updateOptions := metav1.UpdateOptions{}
 	if opts.DryRun {
-		fmt.Fprintf(
-			out,
-			"Would promote WorkloadPolicyProposal %q in namespace %q to WorkloadPolicy by setting label %q: %q.\n",
-			proposal.Name,
-			proposal.Namespace,
-			apiv1alpha1.ApprovalLabelKey,
-			"true",
-		)
-		fmt.Fprintf(
-			out,
-			"This will trigger the creation of a WorkloadPolicy %q in namespace %q.\n",
-			proposal.Name,
-			proposal.Namespace,
-		)
 		updateOptions.DryRun = []string{metav1.DryRunAll}
 	}
 
@@ -127,6 +113,17 @@ func runProposalPromote(
 			proposal.Namespace,
 			err,
 		)
+	}
+
+	if opts.DryRun {
+		fmt.Fprintf(
+			out,
+			"WorkloadPolicyProposal %q in namespace %q can be correctly promoted to WorkloadPolicy.\nRerun without '--dry-run' to apply the changes.\n",
+			proposal.Name,
+			proposal.Namespace,
+		)
+		// We need to return here because we cannot wait for the resource to be created in --dry-run mode
+		return nil
 	}
 
 	fmt.Fprintf(
