@@ -68,15 +68,13 @@ func getRollingUpdateTest() types.Feature {
 				requireExecBlockedInCurrentNamespace(ctx, t, podName, "ubuntu", []string{"mkdir"})
 
 				// Verify that the test directory doesn't exist.
-				stdout, stderr := requireExecFailsInCurrentNamespace(
+				_, _ = requireExecAllowedInCurrentNamespace(
 					ctx,
 					t,
 					podName,
 					"ubuntu",
-					[]string{"ls", "/tmp/testdir"},
+					[]string{"bash", "-c", "[ ! -d /tmp/testdir ]"},
 				)
-				require.Empty(t, stdout)
-				require.Contains(t, stderr, "No such file or directory\n")
 				return ctx
 			}).
 		Assess("rolling update should succeed", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
@@ -109,15 +107,13 @@ func getRollingUpdateTest() types.Feature {
 			podName, err := findUbuntuDeploymentPod(ctx)
 			require.NoError(t, err)
 
-			stdout, stderr := requireExecFailsInCurrentNamespace(
+			_, _ = requireExecAllowedInCurrentNamespace(
 				ctx,
 				t,
 				podName,
 				"ubuntu",
-				[]string{"ls", "/tmp/testdir"},
+				[]string{"bash", "-c", "[ ! -d /tmp/testdir ]"},
 			)
-			require.Empty(t, stdout)
-			require.Contains(t, stderr, "No such file or directory\n")
 			return ctx
 		}).
 		Teardown(func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {

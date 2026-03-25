@@ -264,19 +264,6 @@ func requireExecAllowedInCurrentNamespace(
 	return stdout, stderr
 }
 
-func requireExecFailsInCurrentNamespace(
-	ctx context.Context,
-	t *testing.T,
-	podName string,
-	containerName string,
-	command []string,
-) (string, string) {
-	t.Helper()
-	stdout, stderr, err := execInCurrentNamespace(ctx, podName, containerName, command)
-	require.Error(t, err)
-	return stdout, stderr
-}
-
 func requireExecBlockedInCurrentNamespace(
 	ctx context.Context,
 	t *testing.T,
@@ -285,7 +272,8 @@ func requireExecBlockedInCurrentNamespace(
 	command []string,
 ) {
 	t.Helper()
-	stdout, stderr := requireExecFailsInCurrentNamespace(ctx, t, podName, containerName, command)
+	stdout, stderr, err := execInCurrentNamespace(ctx, podName, containerName, command)
+	require.Error(t, err)
 	require.Empty(t, stdout)
 	require.Contains(t, stderr, operationNotPermittedMsg)
 }

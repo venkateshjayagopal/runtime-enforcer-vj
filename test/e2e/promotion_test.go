@@ -137,11 +137,8 @@ func getPromotionTest() types.Feature {
 			func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 				podName, err := findUbuntuDeploymentPod(ctx)
 				require.NoError(t, err)
-
-				stdout, stderr := requireExecFailsInCurrentNamespace(ctx, t, podName, "ubuntu", []string{"mkdir"})
-				require.Empty(t, stdout)
-				require.Equal(t, "mkdir: missing operand\nTry 'mkdir --help' for more information.\n", stderr)
-
+				// /usr/bin/true is not allowed but we are in monitor mode.
+				_, _ = requireExecAllowedInCurrentNamespace(ctx, t, podName, "ubuntu", []string{"/usr/bin/true"})
 				return ctx
 			}).
 		Assess("delete policy", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
