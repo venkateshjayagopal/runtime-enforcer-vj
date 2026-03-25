@@ -42,7 +42,7 @@ func getMainTest() types.Feature {
 					&proposal,
 					func(object k8s.Object) bool {
 						obj := object.(*v1alpha1.WorkloadPolicyProposal)
-						if obj.OwnerReferences[0].Name == "ubuntu-deployment" &&
+						if obj.OwnerReferences[0].Name == ubuntuDeploymentName &&
 							obj.OwnerReferences[0].Kind == "Deployment" {
 							return true
 						}

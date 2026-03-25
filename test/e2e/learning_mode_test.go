@@ -170,7 +170,6 @@ func getLearningModeTest() types.Feature {
 func getLearningModeNamespaceSelectorTest() types.Feature {
 	enabledNS := envconf.RandomName("learning-enabled-ns", 32)
 	disabledNS := envconf.RandomName("learning-disabled-ns", 32)
-	const deploymentName = "ubuntu-deployment"
 
 	return features.New("LearningModeNamespaceSelector").
 		Setup(SetupSharedK8sClient).
@@ -231,7 +230,7 @@ func getLearningModeNamespaceSelectorTest() types.Feature {
 		Assess("learning creates WorkloadPolicyProposal only in the labeled namespace", func(ctx context.Context, t *testing.T, _ *envconf.Config) context.Context {
 			r := getClient(ctx)
 
-			proposalName, err := proposalutils.GetWorkloadPolicyProposalName("Deployment", deploymentName)
+			proposalName, err := proposalutils.GetWorkloadPolicyProposalName("Deployment", ubuntuDeploymentName)
 			require.NoError(t, err)
 
 			t.Log("verifying proposal is created and learns in the learning-enabled namespace")
