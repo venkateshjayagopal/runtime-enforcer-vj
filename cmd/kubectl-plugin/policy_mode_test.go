@@ -6,9 +6,11 @@ import (
 	"fmt"
 	"testing"
 
-	apiv1alpha1 "github.com/rancher-sandbox/runtime-enforcer/api/v1alpha1"
+	securityv1alpha1 "github.com/rancher-sandbox/runtime-enforcer/api/v1alpha1"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/types/policymode"
 	fakeclient "github.com/rancher-sandbox/runtime-enforcer/pkg/generated/clientset/versioned/fake"
+	"github.com/spf13/cobra"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
@@ -21,13 +23,13 @@ func TestRunPolicyModeSet(t *testing.T) {
 		policyName = "test-policy"
 	)
 
-	createTestPolicyWithMode := func(mode string) *apiv1alpha1.WorkloadPolicy {
-		return &apiv1alpha1.WorkloadPolicy{
+	createTestPolicyWithMode := func(mode string) *securityv1alpha1.WorkloadPolicy {
+		return &securityv1alpha1.WorkloadPolicy{
 			ObjectMeta: metav1.ObjectMeta{
 				Name:      policyName,
 				Namespace: namespace,
 			},
-			Spec: apiv1alpha1.WorkloadPolicySpec{
+			Spec: securityv1alpha1.WorkloadPolicySpec{
 				Mode: mode,
 			},
 		}
@@ -35,7 +37,7 @@ func TestRunPolicyModeSet(t *testing.T) {
 
 	tests := []struct {
 		name           string
-		policy         *apiv1alpha1.WorkloadPolicy
+		policy         *securityv1alpha1.WorkloadPolicy
 		expectedMode   string
 		expectedOutput string
 		expectedError  string
@@ -58,7 +60,7 @@ func TestRunPolicyModeSet(t *testing.T) {
 		},
 		{
 			name:          "missing policy",
-			policy:        &apiv1alpha1.WorkloadPolicy{},
+			policy:        &securityv1alpha1.WorkloadPolicy{},
 			expectedMode:  policymode.MonitorString,
 			expectedError: "not found",
 		},
@@ -98,4 +100,27 @@ func TestRunPolicyModeSet(t *testing.T) {
 			require.Equal(t, tt.expectedMode, updatedPolicy.Spec.Mode)
 		})
 	}
+}
+
+func TestCompletePolicyModeArgs(t *testing.T) {
+	t.Parallel()
+
+	// This auto completes kubectl runtime-enforcer policy protect|monitor [TAB]
+	testAutoCompletePolicyName := func(mode string) func(*testing.T) {
+		return func(t *testing.T) {
+			t.Parallel()
+
+			tf, streams := setupTestFactory(t, testWorkloadPolicy.DeepCopy())
+			defer tf.Cleanup()
+
+			// verify policy mode protect
+			cmd := newPolicyModeCmd(commonCmdDeps{f: tf, ioStreams: streams}, mode)
+			completes, directive := cmd.ValidArgsFunction(cmd, []string{}, "")
+			assert.Equal(t, []string{"test-policy"}, completes)
+			assert.Equal(t, cobra.ShellCompDirectiveNoFileComp, directive)
+		}
+	}
+
+	t.Run("auto-complete policy names for protect mode", testAutoCompletePolicyName("protect"))
+	t.Run("auto-complete policy names for monitor mode", testAutoCompletePolicyName("monitor"))
 }
