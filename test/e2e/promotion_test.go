@@ -39,6 +39,9 @@ func getPromotionTest() types.Feature {
 					&proposal,
 					func(object k8s.Object) bool {
 						obj := object.(*v1alpha1.WorkloadPolicyProposal)
+						if len(obj.OwnerReferences) == 0 {
+							return false
+						}
 						if obj.OwnerReferences[0].Name == ubuntuDeploymentName &&
 							obj.OwnerReferences[0].Kind == "Deployment" {
 							return true
