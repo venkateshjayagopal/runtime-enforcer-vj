@@ -24,6 +24,14 @@ type WorkloadPolicyStatusApplyConfiguration struct {
 	NodesTransitioning []string `json:"nodesTransitioning,omitempty"`
 	// phase indicates the current phase of the workload policy.
 	Phase *apiv1alpha1.Phase `json:"phase,omitempty"`
+	// violationCount is the total number of violation records,
+	// including those no longer retained in violations.
+	//
+	// Note: This value is maintained by the reconciler and reflects
+	// its best-effort view of the system. It is not guaranteed to be
+	// strongly consistent and may be temporarily outdated depending on
+	// reconciliation.
+	ViolationCount *int64 `json:"violationCount,omitempty"`
 	// violations is the list of the most recent violation records (max MaxViolationRecords).
 	// Oldest entries are dropped when the limit is reached.
 	Violations []ViolationRecordApplyConfiguration `json:"violations,omitempty"`
@@ -104,6 +112,14 @@ func (b *WorkloadPolicyStatusApplyConfiguration) WithNodesTransitioning(values .
 // If called multiple times, the Phase field is set to the value of the last call.
 func (b *WorkloadPolicyStatusApplyConfiguration) WithPhase(value apiv1alpha1.Phase) *WorkloadPolicyStatusApplyConfiguration {
 	b.Phase = &value
+	return b
+}
+
+// WithViolationCount sets the ViolationCount field in the declarative configuration to the given value
+// and returns the receiver, so that objects can be built by chaining "With" function invocations.
+// If called multiple times, the ViolationCount field is set to the value of the last call.
+func (b *WorkloadPolicyStatusApplyConfiguration) WithViolationCount(value int64) *WorkloadPolicyStatusApplyConfiguration {
+	b.ViolationCount = &value
 	return b
 }
 

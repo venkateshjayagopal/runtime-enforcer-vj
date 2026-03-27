@@ -94,23 +94,40 @@ func computeWpStatus(
 	return status, nil
 }
 
+func buildPolicyStatus(
+	wp *v1alpha1.WorkloadPolicy,
+	nodesInfo nodesInfoMap,
+	scrapedViolations []v1alpha1.ViolationRecord,
+) (v1alpha1.WorkloadPolicyStatus, error) {
+	newStatus, err := computeWpStatus(nodesInfo, convertToPolicyMode(wp.Spec.Mode), wp.NamespacedName())
+	if err != nil {
+		return v1alpha1.WorkloadPolicyStatus{}, fmt.Errorf(
+			"failed to compute status for policy %s: %w",
+			wp.NamespacedName(),
+			err,
+		)
+	}
+	newStatus.ObservedGeneration = wp.Generation
+
+	// Merge scraped violations into status: prepend new violations to existing,
+	// then trim to the most recent MaxViolationRecords entries.
+	newStatus.Violations = mergeViolations(wp.Status.Violations, scrapedViolations)
+	newStatus.ViolationCount = wp.Status.ViolationCount + int64(len(scrapedViolations))
+	return newStatus, nil
+}
+
 func (r *WorkloadPolicyStatusSync) processWorkloadPolicy(
 	ctx context.Context,
 	wp *v1alpha1.WorkloadPolicy,
 	nodesInfo nodesInfoMap,
 	scrapedViolations []v1alpha1.ViolationRecord,
 ) error {
-	expectedMode := convertToPolicyMode(wp.Spec.Mode)
-	newPolicy := wp.DeepCopy()
-	var err error
-	if newPolicy.Status, err = computeWpStatus(nodesInfo, expectedMode, newPolicy.NamespacedName()); err != nil {
-		return fmt.Errorf("failed to compute status for policy %s: %w", newPolicy.NamespacedName(), err)
+	status, err := buildPolicyStatus(wp, nodesInfo, scrapedViolations)
+	if err != nil {
+		return err
 	}
-	newPolicy.Status.ObservedGeneration = wp.Generation
-
-	// Merge scraped violations into status: prepend new violations to existing,
-	// then trim to the most recent MaxViolationRecords entries.
-	newPolicy.Status.Violations = mergeViolations(wp.Status.Violations, scrapedViolations)
+	newPolicy := wp.DeepCopy()
+	newPolicy.Status = status
 
 	r.logger.V(loglevel.VerbosityDebug).Info("updating",
 		"policy", newPolicy.NamespacedName(),

@@ -125,6 +125,17 @@ spec:
                 description: transitioningNodes is the number of nodes where the policy
                   is transitioning mode.
                 type: integer
+              violationCount:
+                description: |-
+                  violationCount is the total number of violation records,
+                  including those no longer retained in violations.
+
+                  Note: This value is maintained by the reconciler and reflects
+                  its best-effort view of the system. It is not guaranteed to be
+                  strongly consistent and may be temporarily outdated depending on
+                  reconciliation.
+                format: int64
+                type: integer
               violations:
                 description: |-
                   violations is the list of the most recent violation records (max MaxViolationRecords).

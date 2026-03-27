@@ -10,6 +10,7 @@ import (
 
 	"github.com/rancher-sandbox/runtime-enforcer/api/v1alpha1"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/grpcexporter"
+	"github.com/rancher-sandbox/runtime-enforcer/internal/types/policymode"
 	pb "github.com/rancher-sandbox/runtime-enforcer/proto/agent/v1"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/types/known/timestamppb"
@@ -294,6 +295,30 @@ func TestMergeViolations(t *testing.T) {
 			require.Equal(t, tt.expected, got)
 		})
 	}
+}
+
+func TestWorkloadPolicyViolationCount(t *testing.T) {
+	wp := &v1alpha1.WorkloadPolicy{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:      "policy",
+			Namespace: "ns",
+		},
+		Spec: v1alpha1.WorkloadPolicySpec{Mode: policymode.MonitorString},
+		Status: v1alpha1.WorkloadPolicyStatus{
+			ViolationCount: 1,
+			Violations:     []v1alpha1.ViolationRecord{makeRecord(1)},
+		},
+	}
+	scraped := make([]v1alpha1.ViolationRecord, v1alpha1.MaxViolationRecords)
+	for i := range scraped {
+		scraped[i] = makeRecord(i + 2)
+	}
+
+	status, err := buildPolicyStatus(wp, nil, scraped)
+	require.NoError(t, err)
+
+	require.Equal(t, int64(101), status.ViolationCount)
+	require.Len(t, status.Violations, v1alpha1.MaxViolationRecords)
 }
 
 func TestGetViolationsByPolicy(t *testing.T) {

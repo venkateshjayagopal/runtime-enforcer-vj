@@ -312,6 +312,13 @@ Required: \{} +
 | *`transitioningNodes`* __integer__ | transitioningNodes is the number of nodes where the policy is transitioning mode. + |  | 
 | *`nodesTransitioning`* __string array__ | nodesTransitioning contains the names of the nodes that are transitioning. + |  | 
 | *`phase`* __xref:{anchor_prefix}-github-com-rancher-sandbox-runtime-enforcer-api-v1alpha1-phase[$$Phase$$]__ | phase indicates the current phase of the workload policy. + |  | 
+| *`violationCount`* __integer__ | violationCount is the total number of violation records, +
+including those no longer retained in violations. +
+
+Note: This value is maintained by the reconciler and reflects +
+its best-effort view of the system. It is not guaranteed to be +
+strongly consistent and may be temporarily outdated depending on +
+reconciliation. + |  | 
 | *`violations`* __xref:{anchor_prefix}-github-com-rancher-sandbox-runtime-enforcer-api-v1alpha1-violationrecord[$$ViolationRecord$$] array__ | violations is the list of the most recent violation records (max MaxViolationRecords). +
 Oldest entries are dropped when the limit is reached. + |  | 
 |===

@@ -91,6 +91,15 @@ type WorkloadPolicyStatus struct {
 	NodesTransitioning []string `json:"nodesTransitioning,omitempty"`
 	// phase indicates the current phase of the workload policy.
 	Phase Phase `json:"phase,omitempty"`
+	// violationCount is the total number of violation records,
+	// including those no longer retained in violations.
+	//
+	// Note: This value is maintained by the reconciler and reflects
+	// its best-effort view of the system. It is not guaranteed to be
+	// strongly consistent and may be temporarily outdated depending on
+	// reconciliation.
+	// +optional
+	ViolationCount int64 `json:"violationCount,omitempty"`
 	// violations is the list of the most recent violation records (max MaxViolationRecords).
 	// Oldest entries are dropped when the limit is reached.
 	// +optional

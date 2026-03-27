@@ -163,6 +163,9 @@ var schemaYAML = typed.YAMLObject(`types:
     - name: transitioningNodes
       type:
         scalar: numeric
+    - name: violationCount
+      type:
+        scalar: numeric
     - name: violations
       type:
         list:

@@ -549,6 +549,13 @@ func schema_rancher_sandbox_runtime_enforcer_api_v1alpha1_WorkloadPolicyStatus(r
 							Format:      "",
 						},
 					},
+					"violationCount": {
+						SchemaProps: spec.SchemaProps{
+							Description: "violationCount is the total number of violation records, including those no longer retained in violations.\n\nNote: This value is maintained by the reconciler and reflects its best-effort view of the system. It is not guaranteed to be strongly consistent and may be temporarily outdated depending on reconciliation.",
+							Type:        []string{"integer"},
+							Format:      "int64",
+						},
+					},
 					"violations": {
 						SchemaProps: spec.SchemaProps{
 							Description: "violations is the list of the most recent violation records (max MaxViolationRecords). Oldest entries are dropped when the limit is reached.",
