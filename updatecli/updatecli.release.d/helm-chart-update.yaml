@@ -87,6 +87,14 @@ targets:
     spec:
       file: charts/runtime-enforcer/values.yaml
       key: $.agent.image.tag
+  update_debugger_version:
+    scmid: default
+    name: update Helm chart debugger version
+    kind: yaml
+    sourceid: releaseVersion
+    spec:
+      file: charts/runtime-enforcer/values.yaml
+      key: $.debugger.image.tag
   generate_values_schema:
     kind: shell
     disablesourceinput: true
