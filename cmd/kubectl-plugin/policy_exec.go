@@ -99,6 +99,7 @@ func newPolicyExecCmd(deps commonCmdDeps, action policyExecAction) *cobra.Comman
 						[]string{"workloadpolicies", args[0]},
 						toComplete,
 					)
+					execs = cmdutil.Difference(execs, args[2:])
 					return execs, cobra.ShellCompDirectiveNoFileComp
 				default:
 					return nil, cobra.ShellCompDirectiveNoFileComp
