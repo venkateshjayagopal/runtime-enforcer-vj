@@ -24,6 +24,8 @@ import (
 	"sigs.k8s.io/e2e-framework/pkg/types"
 )
 
+const proposalIsNotCreatedTimeout = 30 * time.Second
+
 func getLearningModeTest() types.Feature {
 	return features.New("LearningMode").
 		Setup(SetupSharedK8sClient).
@@ -209,7 +211,7 @@ func getNoLearningModeTest() types.Feature {
 					}
 					return true
 				}),
-				wait.WithTimeout(15*time.Second),
+				wait.WithTimeout(proposalIsNotCreatedTimeout),
 			)
 			require.Error(
 				t,
