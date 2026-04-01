@@ -8,6 +8,7 @@ import (
 	retry "github.com/avast/retry-go/v4"
 	"github.com/containerd/nri/pkg/api"
 	"github.com/containerd/nri/pkg/stub"
+	"github.com/rancher-sandbox/runtime-enforcer/api/v1alpha1"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/podworkload"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/resolver"
 	"github.com/rancher-sandbox/runtime-enforcer/internal/types/workloadkind"
@@ -24,11 +25,17 @@ type plugin struct {
 
 // podLogger returns a logger pre-enriched with the pod fields.
 func (p *plugin) podLogger(pod *api.PodSandbox) *slog.Logger {
+	policy := "none"
+	labels := pod.GetLabels()
+	if labels != nil && labels[v1alpha1.PolicyLabelKey] != "" {
+		policy = labels[v1alpha1.PolicyLabelKey]
+	}
 	return p.logger.With(
 		slog.Group("pod",
 			"name", pod.GetName(),
 			"namespace", pod.GetNamespace(),
 			"uid", pod.GetUid(),
+			"policy", policy,
 		),
 	)
 }
