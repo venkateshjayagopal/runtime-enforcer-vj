@@ -212,7 +212,7 @@ func TestComputeWpStatus(t *testing.T) {
 				FailedNodes:        0,
 				TransitioningNodes: 0,
 				NodesTransitioning: nil,
-				Phase:              v1alpha1.Active,
+				Phase:              v1alpha1.Ready,
 			},
 		},
 	}

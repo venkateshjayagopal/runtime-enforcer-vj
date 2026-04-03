@@ -85,7 +85,7 @@ func computeWpStatus(
 
 	switch {
 	case status.SuccessfulNodes == status.TotalNodes:
-		status.Phase = v1alpha1.Active
+		status.Phase = v1alpha1.Ready
 	case status.FailedNodes > 0:
 		status.Phase = v1alpha1.Failed
 	case status.TransitioningNodes > 0:

@@ -67,7 +67,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: policyName, Namespace: namespaceA},
 					Spec:       apiv1alpha1.WorkloadPolicySpec{Mode: policymode.ProtectString},
-					Status:     apiv1alpha1.WorkloadPolicyStatus{Phase: apiv1alpha1.Active},
+					Status:     apiv1alpha1.WorkloadPolicyStatus{Phase: apiv1alpha1.Ready},
 				},
 			},
 			expected: []workloadProtectionRow{
@@ -76,7 +76,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 					Kind:     workloadkind.Deployment.String(),
 					Policy:   policyName,
 					Mode:     modeToUpper(policymode.ProtectString),
-					Status:   string(apiv1alpha1.Active),
+					Status:   string(apiv1alpha1.Ready),
 				},
 			},
 		},
@@ -131,7 +131,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: policyName, Namespace: namespaceA},
 					Spec:       apiv1alpha1.WorkloadPolicySpec{Mode: policymode.MonitorString},
-					Status:     apiv1alpha1.WorkloadPolicyStatus{Phase: apiv1alpha1.Active},
+					Status:     apiv1alpha1.WorkloadPolicyStatus{Phase: apiv1alpha1.Ready},
 				},
 				{
 					ObjectMeta: metav1.ObjectMeta{Name: policyName, Namespace: namespaceB},
@@ -145,7 +145,7 @@ func TestBuildWorkloadProtectionRows(t *testing.T) {
 					Kind:     workloadkind.Pod.String(),
 					Policy:   policyName,
 					Mode:     modeToUpper(policymode.MonitorString),
-					Status:   string(apiv1alpha1.Active),
+					Status:   string(apiv1alpha1.Ready),
 				},
 				{
 					Workload: types.NamespacedName{Namespace: namespaceB, Name: "pod-b"}.String(),
@@ -176,7 +176,7 @@ func TestRenderPolicyProtection(t *testing.T) {
 		Kind:     workloadkind.Deployment.String(),
 		Policy:   policyName,
 		Mode:     modeToUpper(policymode.ProtectString),
-		Status:   string(apiv1alpha1.Active),
+		Status:   string(apiv1alpha1.Ready),
 	}}
 
 	t.Run("validate json", func(t *testing.T) {
@@ -192,7 +192,7 @@ func TestRenderPolicyProtection(t *testing.T) {
 		require.Equal(t, policyName, decoded[0]["policy"])
 		require.Equal(t, workloadkind.Deployment.String(), decoded[0]["kind"])
 		require.Equal(t, modeToUpper(policymode.ProtectString), decoded[0]["mode"])
-		require.Equal(t, string(apiv1alpha1.Active), decoded[0]["status"])
+		require.Equal(t, string(apiv1alpha1.Ready), decoded[0]["status"])
 	})
 
 	t.Run("validate table", func(t *testing.T) {
@@ -211,6 +211,6 @@ func TestRenderPolicyProtection(t *testing.T) {
 		require.Contains(t, output, policyName)
 		require.Contains(t, output, workloadkind.Deployment.String())
 		require.Contains(t, output, modeToUpper(policymode.ProtectString))
-		require.Contains(t, output, string(apiv1alpha1.Active))
+		require.Contains(t, output, string(apiv1alpha1.Ready))
 	})
 }

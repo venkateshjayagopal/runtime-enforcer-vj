@@ -21,6 +21,10 @@ const (
 )
 
 // Phase represents the current phase of the workload policy.
+// Possible values are:
+// - "Transitioning": the policy is in the process of changing its enforcement mode.
+// - "Failed": the policy deployment has failed.
+// - "Ready": the policy is ready and actively enforced.
 type Phase string
 
 const (
@@ -28,8 +32,8 @@ const (
 	Transitioning Phase = "Transitioning"
 	// Failed indicates that the policy deployment has failed.
 	Failed Phase = "Failed"
-	// Active indicates that the policy is active.
-	Active Phase = "Active"
+	// Ready indicates that the policy is ready.
+	Ready Phase = "Ready"
 )
 
 type WorkloadPolicyExecutables struct {

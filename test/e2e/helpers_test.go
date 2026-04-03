@@ -102,7 +102,7 @@ func SetupTestNamespace(ctx context.Context, t *testing.T, _ *envconf.Config) co
 
 func createAndWaitWP(ctx context.Context, t *testing.T, policy *v1alpha1.WorkloadPolicy) {
 	t.Helper()
-	t.Logf("creating workload policy %q and waiting for it to become Active", policy.NamespacedName())
+	t.Logf("creating workload policy %q and waiting for it to become Ready", policy.NamespacedName())
 	err := getClient(ctx).Create(ctx, policy)
 	require.NoError(t, err, "failed to create workload policy %q", policy.NamespacedName())
 	waitForWorkloadPolicyStatusToBeUpdated(ctx, t, policy)
@@ -135,7 +135,7 @@ func waitForWorkloadPolicyStatusToBeUpdated(
 		if ps.Status.ObservedGeneration != ps.Generation {
 			return false
 		}
-		if ps.Status.Phase != v1alpha1.Active {
+		if ps.Status.Phase != v1alpha1.Ready {
 			return false
 		}
 		if len(ps.Status.NodesTransitioning) != 0 {
