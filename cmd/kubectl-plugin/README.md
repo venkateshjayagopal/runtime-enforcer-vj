@@ -16,7 +16,7 @@ are attached to every [GitHub Release](../../releases).
 
 ```bash
 # Example: linux/amd64
-VERSION=v0.4.0
+VERSION=v0.5.0
 curl -Lo kubectl-runtime_enforcer \
   "https://github.com/rancher-sandbox/runtime-enforcer/releases/download/${VERSION}/kubectl-runtime_enforcer-linux-amd64"
 chmod +x kubectl-runtime_enforcer
