@@ -65,13 +65,17 @@ runs:
       id: run-validator
       working-directory: ${{ github.action_path }}
       run: |
-        wget https://github.com/Andreagit97/bpfvalidator/releases/download/v0.4.0/bpfvalidator_0.4.0_linux_${{ inputs.arch }}.tar.gz
-        tar -xvf bpfvalidator_0.4.0_linux_${{ inputs.arch }}.tar.gz
-        ./bpfvalidator --out_path=/tmp/report.txt ${{ inputs.args }}
+        wget https://github.com/Andreagit97/bpfvalidator/releases/download/v0.4.0/bpfvalidator_0.4.0_linux_${INPUTS_ARCH}.tar.gz
+        tar -xvf bpfvalidator_0.4.0_linux_${INPUTS_ARCH}.tar.gz
+        ./bpfvalidator --out_path=/tmp/report.txt ${INPUTS_ARGS}
         outcome=$?
         echo "outcome=$outcome" >> $GITHUB_OUTPUT
         echo "report=/tmp/report.txt" >> $GITHUB_OUTPUT
         cat /tmp/report.txt
-        if [ $outcome -ne 0 ] && [ "${{ inputs.fail_on_validation }}" == "true" ]; then
+        if [ $outcome -ne 0 ] && [ "${INPUTS_FAIL_ON_VALIDATION}" == "true" ]; then
           exit $outcome
         fi
+      env:
+        INPUTS_ARCH: ${{ inputs.arch }}
+        INPUTS_ARGS: ${{ inputs.args }}
+        INPUTS_FAIL_ON_VALIDATION: ${{ inputs.fail_on_validation }}
